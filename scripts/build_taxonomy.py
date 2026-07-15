@@ -292,6 +292,31 @@ def main() -> None:
         ]},
     ]})
 
+    # ---- Translator: who produced the English (per-doc, from the substrate) ----
+    MACHINE = {"claude-fable-5"}
+    TR_NAMES = {"sujato": "Bhikkhu Sujato", "brahmali": "Bhikkhu Brahmali",
+                "kelly": "John Kelly", "kovilo": "Bhikkhu Kovilo",
+                "claude-fable-5": "Claude Fable 5"}
+    docmeta = pl.read_parquet(A / "documents.parquet")
+    uid_tr = dict(docmeta.select("uid", "translator").iter_rows())
+    tr_docs: dict[str, list[int]] = {}
+    for i, u in enumerate(uids):
+        t = uid_tr.get(u)
+        if t:
+            tr_docs.setdefault(t, []).append(i)
+    human = sorted(((t, d) for t, d in tr_docs.items() if t not in MACHINE),
+                   key=lambda kv: -len(kv[1]))
+    machine = sorted(((t, d) for t, d in tr_docs.items() if t in MACHINE),
+                     key=lambda kv: -len(kv[1]))
+    tr_node = {"h": "Translator", "subs": []}
+    if human:
+        tr_node["subs"].append({"h": "Human", "terms": [
+            {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d)} for t, d in human]})
+    if machine:
+        tr_node["subs"].append({"h": "Machine", "terms": [
+            {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d)} for t, d in machine]})
+    tree.append(tr_node)
+
     out = {"order": uids, "tree": tree}
     (A / "taxonomy.json").write_text(json.dumps(out, ensure_ascii=False))
     size = (A / "taxonomy.json").stat().st_size / 1e6
