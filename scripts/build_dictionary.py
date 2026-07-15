@@ -23,7 +23,8 @@ def main() -> None:
             d = e["definition"]
             sense["d"] = "; ".join(d) if isinstance(d, list) else d
         if e.get("xr"):
-            sense["x"] = e["xr"]
+            xr = e["xr"]
+            sense["x"] = xr if isinstance(xr, list) else [xr]
         if sense:
             out.setdefault(hw, []).append(sense)
     dst = REPO / "site" / "dictionary.json"

@@ -393,7 +393,7 @@ function renderDictEntry(w){
   }
   const senses = dict[hw].map(s => `<div class="sense">
     ${s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}
-    ${s.x ? `<div class="xr">see: ${s.x.map(dlink).join(", ")}</div>` : ""}
+    ${s.x ? `<div class="xr">see: ${(Array.isArray(s.x) ? s.x : [s.x]).map(dlink).join(", ")}</div>` : ""}
   </div>`).join("");
   dictEl.innerHTML = `${backBtn()}<span class="hw">${esc(hw)}</span>
     ${hw !== w ? `<span class="via">← ${esc(w)}</span>` : ""}${senses}`;
@@ -552,7 +552,7 @@ const CC = makeMap("cc", "tc", {
     const nMatch = termMatches ? visible.filter(([p]) => termMatches.has(p)).length : 0;
     for (const [p, x, y] of visible){
       const dim = termMatches && !termMatches.has(p);
-      const r = Math.min(6, 0.7 + 0.85 * Math.log10(p.df)) * devicePixelRatio
+      const r = Math.max(2.4, Math.min(6, 0.7 + 0.85 * Math.log10(p.df))) * devicePixelRatio
         * (M.hover === p ? 1.6 : 1);
       ctx.globalAlpha = dim ? 0.4 : 0.9;
       ctx.fillStyle = dim ? grey : (p.hd === false ? DICT_NO : DICT_YES);
@@ -591,7 +591,7 @@ const CD = makeMap("cd", "td", {
       const dim = docMatches && !docMatches.has(p);
       ctx.globalAlpha = dim ? 0.5 : (M.hover === p ? 1 : 0.85);
       ctx.fillStyle = dim ? grey : (DCOLORS[groupOf(p)] || "#888");
-      const r = Math.min(6.5, 1 + 0.15 * Math.sqrt(p.n)) * devicePixelRatio
+      const r = Math.max(2.4, Math.min(6.5, 1 + 0.15 * Math.sqrt(p.n))) * devicePixelRatio
         * (M.hover === p ? 1.6 : 1);
       ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
       if (docMatches && docMatches.has(p) && docMatches.size <= 400){
