@@ -20,7 +20,8 @@ def main() -> None:
         if e.get("grammar"):
             sense["g"] = e["grammar"]
         if e.get("definition"):
-            sense["d"] = e["definition"]
+            d = e["definition"]
+            sense["d"] = "; ".join(d) if isinstance(d, list) else d
         if e.get("xr"):
             sense["x"] = e["xr"]
         if sense:

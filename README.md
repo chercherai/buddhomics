@@ -55,6 +55,7 @@ uv run scripts/build_taxonomy.py   # curated People/Beings/Places/Lists -> per-t
 uv run scripts/build_texts.py      # per-document segment JSON for the reading panel
 uv run scripts/build_concept_bits.py  # term-doc incidence bitmatrix linking the two maps
 uv run scripts/build_dictionary.py    # NCPED (sc-data) -> site/dictionary.json
+uv run scripts/build_english_index.py # English-translation search index (vocab + bitmatrix)
 cp artifacts/map.json artifacts/concepts.json artifacts/taxonomy.json artifacts/tree.svg site/
 rsync -avz site/ cherch:~/buddhomics.cherch.org/
 ```

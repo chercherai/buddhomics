@@ -192,6 +192,26 @@ Promise.all([
 });
 fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => { dict = d; });
 
+let enWords = null, enBits = null, EBPR = 0;
+Promise.all([
+  fetch("english_terms.json", {cache:"no-cache"}).then(r => r.json()),
+  fetch("english_bits.bin", {cache:"no-cache"}).then(r => r.arrayBuffer()),
+]).then(([w, b]) => {
+  enWords = w; enBits = new Uint8Array(b); EBPR = Math.ceil(6959 / 8);
+});
+function docsOfEnglish(q){
+  // union of docs for every indexed English word containing q
+  if (!enWords) return new Set();
+  const s = new Set();
+  for (let t = 0; t < enWords.length; t++){
+    if (!enWords[t].includes(q)) continue;
+    for (let j = 0; j < docs.length; j++){
+      if (enBits[t * EBPR + (j >> 3)] & (1 << (j & 7))) s.add(docs[j]);
+    }
+  }
+  return s;
+}
+
 const hasBit = (t, j) => bits[t * BPR + (j >> 3)] & (1 << (j & 7));
 function docsOfTerm(t){
   const s = new Set();
@@ -439,6 +459,34 @@ const CD = makeMap("cd", "td", {
 });
 
 // ---- search ----
+function searchDict(q){
+  if (!dict) return;
+  let entryHw = null;
+  for (const cand of lookupCandidates(q)){
+    if (dict[cand]){ entryHw = cand; break; }
+  }
+  const hwHits = [], defHits = [];
+  for (const hw in dict){
+    if (hw !== entryHw && hwHits.length < 10 && hw.includes(q)) hwHits.push(hw);
+    if (defHits.length < 12 &&
+        dict[hw].some(s => s.d && s.d.toLowerCase().includes(q))) defHits.push(hw);
+    if (hwHits.length >= 10 && defHits.length >= 12) break;
+  }
+  const link = hw => `<a onclick="wordClick('${esc(hw)}')">${esc(hw)}</a>`;
+  const parts = [];
+  if (entryHw){
+    const senses = dict[entryHw].map(s => `<div class="sense">
+      ${s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}</div>`).join("");
+    parts.push(`<span class="hw">${esc(entryHw)}</span>${senses}`);
+  }
+  if (hwHits.length)
+    parts.push(`<div class="xr">headwords: ${hwHits.map(link).join(", ")}</div>`);
+  if (defHits.length)
+    parts.push(`<div class="xr">in definitions: ${defHits.map(link).join(", ")}</div>`);
+  if (parts.length) dictEl.innerHTML = parts.join("");
+  else dictEl.innerHTML = `<span class="hw">${esc(q)}</span>
+    <p class="empty">no dictionary matches</p>`;
+}
 qEl.addEventListener("input", () => {
   if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
   const q = qEl.value.trim().toLowerCase();
@@ -447,8 +495,13 @@ qEl.addEventListener("input", () => {
     p.uid.toLowerCase().includes(q) ||
     (p.subpath || "").toLowerCase().includes(q) ||
     p.terms.some(t => t.includes(q))));
+  const nPali = docMatches.size;
+  for (const p of docsOfEnglish(q)) docMatches.add(p);
   termMatches = new Set(terms.filter(p => p.t.includes(q)));
-  setStatus(`<b>${docMatches.size}</b> texts · <b>${termMatches.size}</b> terms match “${esc(q)}”`);
+  const enNote = docMatches.size > nPali
+    ? ` (${docMatches.size - nPali} via English)` : "";
+  setStatus(`<b>${docMatches.size}</b> texts${enNote} · <b>${termMatches.size}</b> terms match “${esc(q)}”`);
+  searchDict(q);
   CC.draw(); CD.draw();
 });
 qEl.addEventListener("keydown", e => {
