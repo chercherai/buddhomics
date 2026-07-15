@@ -488,7 +488,7 @@ function showDict(word){
   dictPush({w: String(word).toLowerCase()});
   renderDictEntry(String(word).toLowerCase());
 }
-// layered: DPD (inflected-form, primary) + NCPED prose + DPPN proper names
+// layered: NCPED prose (simplest, on top) + DPD (inflected-form) + DPPN names
 async function renderDictEntry(w){
   const token = ++dictReqToken;
   w = String(w).toLowerCase();
@@ -505,12 +505,15 @@ async function renderDictEntry(w){
   }
   const parts = [backBtn(), `<span class="hw">${esc(w)}</span>` +
     ` <a class="showlink" data-q="${escA(searchStem(w, dpdDefs))}">show on maps ↗</a>`];
-  if (dpdDefs) for (const d of dpdDefs) parts.push(`<div class="sense">${dpdLine(d)}</div>`);
-  if (ncHw){
+  if (ncHw){   // NCPED first — concise prose, easiest to read
     parts.push(`<div class="src">NCPED${ncHw !== w ? " · " + esc(ncHw) : ""}</div>`);
     for (const s of dict[ncHw]) parts.push(`<div class="sense">${
       s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}${
       s.x ? `<div class="xr">see: ${(Array.isArray(s.x) ? s.x : [s.x]).map(dlink).join(", ")}</div>` : ""}</div>`);
+  }
+  if (dpdDefs){
+    parts.push(`<div class="src">DPD</div>`);
+    for (const d of dpdDefs) parts.push(`<div class="sense">${dpdLine(d)}</div>`);
   }
   if (nameTxt){
     parts.push(`<div class="src">Proper name (DPPN)</div><div class="sense">${esc(nameTxt)}</div>`);
