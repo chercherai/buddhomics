@@ -289,7 +289,23 @@ const reader = document.getElementById("reader");
 const rbody = document.getElementById("rbody");
 const textCache = new Map();
 
-canvas.addEventListener("click", () => { if (hover) openReader(hover); });
+function pickAt(clientX, clientY){
+  const r = canvas.getBoundingClientRect();
+  const mx = (clientX - r.left) * devicePixelRatio, my = (clientY - r.top) * devicePixelRatio;
+  let best = null, bd = 12 * devicePixelRatio;
+  for (const p of pts){
+    if (hidden.has(groupOf(p))) continue;
+    if (matches && !matches.has(p)) continue;
+    const [x, y] = toScreen(p);
+    const d = Math.hypot(x - mx, y - my);
+    if (d < bd){ bd = d; best = p; }
+  }
+  return best;
+}
+canvas.addEventListener("click", e => {
+  const p = hover || pickAt(e.clientX, e.clientY);
+  if (p) openReader(p);
+});
 document.getElementById("rclose").onclick = closeReader;
 addEventListener("keydown", e => {
   if (e.key === "Escape" && !reader.hidden && document.activeElement !== qEl){
