@@ -728,6 +728,8 @@ async function openReader(p){
     const untranslated = doc.segs.filter(s => s[1] && !s[2]).length;
     if (untranslated > doc.segs.length * 0.5){
       parts.push(`<p class="note">Mostly untranslated — ${untranslated} of ${doc.segs.length} segments have no English yet. Click any Pali word to look it up.</p>`);
+    } else if (doc.translator === "claude-fable-5"){
+      parts.push(`<p class="note">English: <b>machine translation by Claude Fable 5</b> — a trial rendering, not a published translation. Click any Pali word to look it up; dotted words are on the concept map.</p>`);
     } else if (doc.translator){
       parts.push(`<p class="note">English: ${esc(doc.translator)} (via bilara-data). Click any Pali word to look it up; dotted words are on the concept map.</p>`);
     }
