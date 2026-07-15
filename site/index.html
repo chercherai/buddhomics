@@ -80,6 +80,10 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
 #dict .xr{font-family:system-ui,sans-serif; font-size:.75rem; color:var(--muted);}
 #dict .xr a{color:var(--accent); cursor:pointer; font-style:italic;}
 #dict .empty{color:var(--muted); font-family:system-ui,sans-serif; font-size:.78rem; margin:.1rem 0;}
+#dict .dback{float:right; border:0; background:var(--card); color:var(--muted);
+  border-radius:4px; cursor:pointer; padding:.1rem .5rem; font:inherit;
+  font-family:system-ui,sans-serif; font-size:.75rem;}
+#dict .dback:hover{color:var(--accent);}
 #reader{flex:1; min-height:0; border:1px solid var(--rule); border-radius:6px;
   background:var(--bg); display:flex; flex-direction:column;}
 #rhead{display:flex; align-items:baseline; gap:.55rem; flex-wrap:wrap;
@@ -270,10 +274,26 @@ function wordClick(w){
 
 // ---- dictionary ----
 const dictEl = document.getElementById("dict");
+let dictHist = [], dictCur = null;
 dictEl.addEventListener("click", e => {
+  if (e.target.closest(".dback")){ dictBack(); return; }
   const a = e.target.closest("a[data-w]");
   if (a) wordClick(a.dataset.w);
 });
+function dictPush(state){
+  if (dictCur && !(dictCur.s !== undefined && state.s !== undefined)){
+    dictHist.push(dictCur);
+    if (dictHist.length > 50) dictHist.shift();
+  }
+  dictCur = state;
+}
+function dictBack(){
+  if (!dictHist.length) return;
+  dictCur = dictHist.pop();
+  if (dictCur.s !== undefined) renderDictSearch(dictCur.s);
+  else renderDictEntry(dictCur.w);
+}
+const backBtn = () => dictHist.length ? '<button class="dback">← back</button>' : "";
 const escA = s => esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const dlink = hw => `<a data-w="${escA(hw)}">${esc(hw)}</a>`;
 // map a dictionary headword (lemma) onto a concept-map token if one exists
@@ -300,14 +320,17 @@ function lookupCandidates(w){
   return c;
 }
 function showDict(word){
-  const w = String(word).toLowerCase();
+  dictPush({w: String(word).toLowerCase()});
+  renderDictEntry(String(word).toLowerCase());
+}
+function renderDictEntry(w){
   if (!dict){ dictEl.innerHTML = '<p class="empty">dictionary still loading…</p>'; return; }
   let hw = null;
   for (const cand of lookupCandidates(w)){
     if (dict[cand]){ hw = cand; break; }
   }
   if (!hw){
-    dictEl.innerHTML = `<span class="hw">${esc(w)}</span>
+    dictEl.innerHTML = `${backBtn()}<span class="hw">${esc(w)}</span>
       <p class="empty">not found in NCPED (inflected form? try a shorter stem)</p>`;
     return;
   }
@@ -315,7 +338,7 @@ function showDict(word){
     ${s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}
     ${s.x ? `<div class="xr">see: ${s.x.map(dlink).join(", ")}</div>` : ""}
   </div>`).join("");
-  dictEl.innerHTML = `<span class="hw">${esc(hw)}</span>
+  dictEl.innerHTML = `${backBtn()}<span class="hw">${esc(hw)}</span>
     ${hw !== w ? `<span class="via">← ${esc(w)}</span>` : ""}${senses}`;
 }
 
@@ -408,6 +431,7 @@ const dimC = () => getComputedStyle(document.documentElement)
 
 const CC = makeMap("cc", "tc", {
   pts: () => terms, px: p => p.x, py: p => p.y,
+  skip: p => termMatches && !termMatches.has(p),
   tipHtml: p => `<div class="hd" style="font-style:italic">${p.t}</div>
     <div class="meta">in ${p.df} texts${p.g ? " · " + p.g : ""}</div>`,
   onClick: p => selectTerm(termIdx.get(p.t)),
@@ -442,7 +466,7 @@ const CC = makeMap("cc", "tc", {
 
 const CD = makeMap("cd", "td", {
   pts: () => docs, px: p => p.tx, py: p => p.ty,
-  skip: p => hiddenGroups.has(groupOf(p)),
+  skip: p => hiddenGroups.has(groupOf(p)) || (docMatches && !docMatches.has(p)),
   tipHtml: p => `<div class="hd">${p.uid}</div>
     <div class="meta">${p.basket} · ${p.subpath || p.nikaya} · ${p.n} segments</div>
     <div class="terms">${p.terms.slice(0,5).join(" · ")}</div>
@@ -474,6 +498,10 @@ const CD = makeMap("cd", "td", {
 
 // ---- search ----
 function searchDict(q){
+  dictPush({s: q});
+  return renderDictSearch(q);
+}
+function renderDictSearch(q){
   if (!dict) return [];
   let entryHw = null;
   for (const cand of lookupCandidates(q)){
@@ -496,8 +524,8 @@ function searchDict(q){
     parts.push(`<div class="xr">headwords: ${hwHits.map(dlink).join(", ")}</div>`);
   if (defHits.length)
     parts.push(`<div class="xr">in definitions: ${defHits.map(dlink).join(", ")}</div>`);
-  if (parts.length) dictEl.innerHTML = parts.join("");
-  else dictEl.innerHTML = `<span class="hw">${esc(q)}</span>
+  if (parts.length) dictEl.innerHTML = backBtn() + parts.join("");
+  else dictEl.innerHTML = `${backBtn()}<span class="hw">${esc(q)}</span>
     <p class="empty">no dictionary matches</p>`;
   return entryHw ? [entryHw, ...hwHits, ...defHits] : [...hwHits, ...defHits];
 }
