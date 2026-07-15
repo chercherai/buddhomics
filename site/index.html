@@ -251,12 +251,17 @@ function selectTerm(i){
   showDict(p.t);
   CC.draw(); CD.draw(); relitReader();
 }
+let currentDoc = null;   // what's open in the reader, marked on the map
 function selectDoc(p){
-  const j = docs.indexOf(p);
-  docMatches = new Set([p]);
-  termMatches = termsOfDoc(j);
-  if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
-  setStatus(`<b>${p.uid}</b> touches <b>${termMatches.size}</b> concept terms`);
+  currentDoc = p;
+  const filtered = !!taxoActive || qEl.value.trim() !== "";
+  if (!filtered){
+    // no filter active: focus this text — its footprint on the concept map
+    docMatches = new Set([p]);
+    termMatches = termsOfDoc(docs.indexOf(p));
+    setStatus(`<b>${p.uid}</b> touches <b>${termMatches.size}</b> concept terms`);
+  }
+  // filter active: keep the working set, just open the text
   openReader(p);
   CC.draw(); CD.draw();
 }
@@ -501,6 +506,13 @@ const CD = makeMap("cd", "td", {
         ctx.globalAlpha = 0.9; ctx.strokeStyle = DCOLORS[groupOf(p)] || "#888";
         ctx.lineWidth = devicePixelRatio;
         ctx.beginPath(); ctx.arc(x, y, r + 2.5 * devicePixelRatio, 0, 7); ctx.stroke();
+      }
+      if (p === currentDoc){
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = getComputedStyle(document.documentElement)
+          .getPropertyValue("--accent").trim();
+        ctx.lineWidth = 1.6 * devicePixelRatio;
+        ctx.beginPath(); ctx.arc(x, y, r + 4.5 * devicePixelRatio, 0, 7); ctx.stroke();
       }
     }
     ctx.globalAlpha = 1;
