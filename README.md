@@ -51,7 +51,9 @@ KN is only ~33% translated; DN/MN/SN/AN are ~93–98%.
 uv run scripts/build_features.py   # Pali TF-IDF -> SVD(100) -> UMAP + t-SNE; map.json + doc_svd.npy
 uv run scripts/build_tree.py       # collection centroids -> cosine average-linkage -> tree.svg
 uv run scripts/build_concepts.py   # LSA term vectors -> t-SNE concept map with numbered-list overlays
-cp artifacts/map.json artifacts/concepts.json artifacts/tree.svg site/
+uv run scripts/build_taxonomy.py   # curated People/Beings/Places/Lists -> per-term doc membership
+uv run scripts/build_texts.py      # per-document segment JSON for the reading panel
+cp artifacts/map.json artifacts/concepts.json artifacts/taxonomy.json artifacts/tree.svg site/
 rsync -avz site/ cherch:~/buddhomics.cherch.org/
 ```
 

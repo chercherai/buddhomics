@@ -34,6 +34,29 @@ h1 a{color:inherit; text-decoration:none}
 #q:focus{outline:1.5px solid var(--accent);}
 #qcount{color:var(--muted);}
 #wrap{display:flex; gap:.8rem; margin:.6rem 1.5rem; align-items:stretch;}
+#taxo{width:15.5rem; flex:none; height:74vh; overflow-y:auto; border:1px solid var(--rule);
+  border-radius:6px; padding:.6rem .5rem 1.2rem; font-family:system-ui,sans-serif;
+  font-size:.8rem;}
+#taxo details{margin:0 0 .15rem;}
+#taxo summary{cursor:pointer; display:flex; align-items:center; gap:.4rem;
+  padding:.28rem .4rem; border-radius:5px; list-style:none;}
+#taxo summary::-webkit-details-marker{display:none;}
+#taxo summary::before{content:"▸"; font-size:.7em; color:var(--muted);
+  transition:transform .12s;}
+#taxo details[open] > summary::before{transform:rotate(90deg);}
+#taxo .lvl1 > summary{font-weight:700; letter-spacing:.04em;}
+#taxo .lvl2{margin-left:.7rem;}
+#taxo .lvl2 > summary{font-weight:600; color:var(--ink);}
+#taxo .term{display:flex; align-items:center; gap:.4rem; width:100%;
+  border:0; background:transparent; color:var(--ink); font:inherit; text-align:left;
+  padding:.22rem .4rem .22rem 1.9rem; border-radius:5px; cursor:pointer;}
+#taxo .term:hover{background:var(--card);}
+#taxo .count{margin-left:auto; color:var(--muted); font-size:.7rem;
+  font-variant-numeric:tabular-nums; border:0; background:transparent; font-family:inherit;
+  cursor:pointer; padding:.05rem .35rem; border-radius:8px;}
+#taxo summary .count:hover{background:var(--card); color:var(--accent);}
+#taxo .active{background:var(--card); color:var(--accent); font-weight:600;}
+#taxo .active .count{color:var(--accent);}
 #mapbox{position:relative; flex:1; min-width:0;}
 canvas{width:100%; height:74vh; display:block; border:1px solid var(--rule);
   border-radius:6px; background:var(--bg); cursor:grab; touch-action:none;}
@@ -98,6 +121,7 @@ footer a{color:var(--accent)}
   <span id="qcount"></span>
 </div>
 <div id="wrap">
+  <nav id="taxo" aria-label="browse by topic"></nav>
   <div id="mapbox">
     <canvas id="c"></canvas>
     <div id="tip"></div>
@@ -161,7 +185,74 @@ fetch("map.json").then(r => r.json()).then(data => {
   if (!views.tsne) document.getElementById("bt-tsne").disabled = true;
   buildLegend();
   resize();
+  fetch("taxonomy.json").then(r => r.json()).then(buildTaxo).catch(() => {});
 });
+
+// ---- taxonomy browser ----
+let taxoActive = null;
+function setFilter(set, el, label){
+  if (taxoActive){ taxoActive.classList.remove("active"); }
+  taxoActive = null;
+  if (el && set){
+    taxoActive = el; el.classList.add("active");
+    matches = set;
+    qEl.value = "";
+    qCount.textContent = `${set.size} texts · ${label}`;
+  } else {
+    matches = null;
+    qCount.textContent = "";
+  }
+  draw();
+}
+function buildTaxo(tax){
+  const nav = document.getElementById("taxo");
+  const union = arrs => {
+    const s = new Set();
+    for (const a of arrs) for (const i of a) s.add(pts[i]);
+    return s;
+  };
+  const chip = (n, get, label) => {
+    const b = document.createElement("button");
+    b.className = "count"; b.textContent = n; b.title = `show ${n} texts`;
+    b.onclick = e => {
+      e.preventDefault(); e.stopPropagation();
+      if (taxoActive === b.parentElement){ setFilter(null); return; }
+      setFilter(get(), b.parentElement, label);
+    };
+    return b;
+  };
+  for (const h of tax.tree){
+    const d1 = document.createElement("details"); d1.className = "lvl1";
+    const s1 = document.createElement("summary");
+    s1.append(h.h);
+    const allDocs = h.subs.flatMap(s => s.terms.map(t => t.docs));
+    s1.append(chip(union(allDocs).size, () => union(allDocs), h.h));
+    d1.append(s1);
+    for (const sub of h.subs){
+      const d2 = document.createElement("details"); d2.className = "lvl2";
+      const s2 = document.createElement("summary");
+      s2.append(sub.h);
+      const subDocs = sub.terms.map(t => t.docs);
+      s2.append(chip(union(subDocs).size, () => union(subDocs), sub.h));
+      d2.append(s2);
+      for (const term of sub.terms){
+        const b = document.createElement("button");
+        b.className = "term";
+        b.append(term.t);
+        const c = document.createElement("span");
+        c.className = "count"; c.textContent = term.docs.length;
+        b.append(c);
+        b.onclick = () => {
+          if (taxoActive === b){ setFilter(null); return; }
+          setFilter(union([term.docs]), b, term.t);
+        };
+        d2.append(b);
+      }
+      d1.append(d2);
+    }
+    nav.append(d1);
+  }
+}
 
 for (const [id, name] of [["bt-umap","umap"], ["bt-tsne","tsne"]]){
   document.getElementById(id).onclick = () => {
@@ -175,6 +266,7 @@ for (const [id, name] of [["bt-umap","umap"], ["bt-tsne","tsne"]]){
 
 const qEl = document.getElementById("q"), qCount = document.getElementById("qcount");
 qEl.addEventListener("input", () => {
+  if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
   const q = qEl.value.trim().toLowerCase();
   if (!q){ matches = null; qCount.textContent = ""; draw(); return; }
   matches = new Set(pts.filter(p =>
