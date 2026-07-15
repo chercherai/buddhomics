@@ -1,7 +1,8 @@
 """Curated taxonomy -> per-term document membership for the map's browse panel.
 
-Each term is defined by stem prefixes (and/or exact token forms, prefixed "="),
-matched against the full token inventory of every mapped document. Output is
+Each term is defined by stem prefixes, exact token forms (prefixed "="), or
+multi-word phrases (prefixed "~", substring match on the tag-stripped lowercase
+text), matched against every mapped document. Output is
 artifacts/taxonomy.json:
 
   {"order": [uid, ...],            # map.json point order
@@ -109,6 +110,32 @@ TAXONOMY = [
             ("Vajjī", ["=vajjī", "=vajjīnaṁ", "vajjiput"]),
         ]),
     ]),
+    ("Language", [
+        ("Openings & formulas", [
+            ("evaṁ me sutaṁ — “thus have I heard”", ["~evaṁ me sutaṁ"]),
+            ("sāvatthinidāna — the Sāvatthī setting", ["sāvatthinidān"]),
+            ("yathābhūtaṁ — “as it really is”", ["yathābhūt"]),
+            ("…pe… — elided repetition", ["=pe"]),
+        ]),
+        ("Modes of address", [
+            ("bhikkhave — “monks!”", ["=bhikkhave"]),
+            ("bhante — “venerable sir”", ["=bhante"]),
+            ("āvuso — “friend”", ["=āvuso"]),
+            ("mahārāja — “great king”", ["mahārāj"]),
+            ("gahapati — “householder”", ["gahapat"]),
+        ]),
+        ("Similes", [
+            ("seyyathāpi — “just as…”", ["seyyathāp"]),
+            ("upamā — comparisons", ["upam"]),
+            ("opamma — the simile named", ["opamm"]),
+        ]),
+        ("Verse & debate", [
+            ("gāthā — verses", ["gāth"]),
+            ("na … vattabbe — “it should not be said”", ["vattabb"]),
+            ("āmantā — debate assent", ["=āmantā"]),
+            ("pucchā — questions", ["pucch"]),
+        ]),
+    ]),
     ("Numbered Lists", [
         ("Aggregates (5)", [
             ("khandhā (the set)", ["khandh"]),
@@ -175,10 +202,16 @@ def main() -> None:
     vocab = vec.get_feature_names_out()
     print(f"vocab: {len(vocab)} tokens over {len(uids)} docs")
 
+    # normalized full text for phrase matching
+    flat = [" ".join(tokenize(t)) for t in corpus]
+
     def docs_for(stems: list[str]) -> list[int]:
-        cols = []
+        cols, phrase_hits = [], set()
         for s in stems:
-            if s.startswith("="):
+            if s.startswith("~"):
+                phrase = " ".join(tokenize(s[1:]))
+                phrase_hits.update(i for i, t in enumerate(flat) if phrase in t)
+            elif s.startswith("="):
                 t = s[1:]
                 idx = np.searchsorted(vocab, t)
                 if idx < len(vocab) and vocab[idx] == t:
@@ -187,10 +220,11 @@ def main() -> None:
                 lo = np.searchsorted(vocab, s)
                 hi = np.searchsorted(vocab, s + "￿")
                 cols.extend(range(lo, hi))
-        if not cols:
-            return []
-        hit = np.asarray(X[:, cols].sum(axis=1)).ravel() > 0
-        return np.where(hit)[0].tolist()
+        hits = phrase_hits
+        if cols:
+            mask = np.asarray(X[:, cols].sum(axis=1)).ravel() > 0
+            hits = hits | set(np.where(mask)[0].tolist())
+        return sorted(hits)
 
     tree = []
     for header, subs in TAXONOMY:

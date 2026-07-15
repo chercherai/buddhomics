@@ -177,7 +177,7 @@ function fitView(){
 }
 const view = () => views[layout];
 
-fetch("map.json").then(r => r.json()).then(data => {
+fetch("map.json", {cache: "no-cache"}).then(r => r.json()).then(data => {
   pts = data;
   views.umap = fitView();
   layout = "tsne"; views.tsne = pts[0].tx !== undefined ? fitView() : null;
@@ -185,7 +185,7 @@ fetch("map.json").then(r => r.json()).then(data => {
   if (!views.tsne) document.getElementById("bt-tsne").disabled = true;
   buildLegend();
   resize();
-  fetch("taxonomy.json").then(r => r.json()).then(buildTaxo).catch(() => {});
+  fetch("taxonomy.json", {cache: "no-cache"}).then(r => r.json()).then(buildTaxo).catch(() => {});
 });
 
 // ---- taxonomy browser ----

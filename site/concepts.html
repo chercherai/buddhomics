@@ -96,7 +96,7 @@ let view = null;
 
 const radius = p => Math.min(6.5, 0.8 + 0.9 * Math.log10(p.df));
 
-fetch("concepts.json").then(r => r.json()).then(data => {
+fetch("concepts.json", {cache: "no-cache"}).then(r => r.json()).then(data => {
   pts = data;
   const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
   const cx=(Math.min(...xs)+Math.max(...xs))/2, cy=(Math.min(...ys)+Math.max(...ys))/2;
