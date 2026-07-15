@@ -1,0 +1,17 @@
+[project]
+name = "buddhomics"
+version = "0.1.0"
+description = "Hierarchical explorer of the Pali canon: sound -> word -> segment -> discourse -> collection -> canon -> cross-tradition"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.116.0",
+    "httpx>=0.28.1",
+    "polars>=1.0",
+    "pyarrow>=16",
+    "scikit-learn>=1.9.0",
+    "scipy>=1.18.0",
+    "umap-learn>=0.5.12",
+]
+
+[dependency-groups]
+dev = []

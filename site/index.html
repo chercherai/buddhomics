@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>buddhomics — a map of the Pali canon</title>
+<style>
+:root{
+  --bg:#FAFAF7; --ink:#212633; --muted:#6B7080; --rule:#DDDCD4; --card:#F1F0EA;
+  --accent:#8E2A18;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#15171D; --ink:#DEDCD2; --muted:#8B8F9C; --rule:#2C2F38; --card:#1C1F27;
+  --accent:#C9A45C;
+}}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
+header{padding:1.2rem 1.5rem .4rem; display:flex; align-items:baseline; gap:1.2rem; flex-wrap:wrap;}
+h1{font-size:1.35rem; margin:0; font-weight:600;}
+h1 a{color:inherit; text-decoration:none}
+.nav{font-family:system-ui,sans-serif; font-size:.8rem;}
+.nav a{color:var(--muted); text-decoration:none; margin-right:1rem;}
+.nav a:hover,.nav a[aria-current]{color:var(--accent);}
+.sub{color:var(--muted); font-size:.9rem; margin:.2rem 0 0; max-width:52rem;}
+#wrap{position:relative; margin:1rem 1.5rem;}
+canvas{width:100%; height:78vh; display:block; border:1px solid var(--rule);
+  border-radius:6px; background:var(--bg); cursor:grab; touch-action:none;}
+#tip{position:absolute; pointer-events:none; display:none; max-width:16rem;
+  background:var(--card); border:1px solid var(--rule); border-radius:6px;
+  padding:.55rem .7rem; font-family:system-ui,sans-serif; font-size:.78rem;
+  line-height:1.4; box-shadow:0 2px 10px rgba(0,0,0,.12); z-index:3;}
+#tip .uid{font-weight:700;}
+#tip .terms{color:var(--accent); font-style:italic;}
+#tip .meta{color:var(--muted);}
+#legend{display:flex; flex-wrap:wrap; gap:.35rem .9rem; padding:.6rem 1.5rem 1.4rem;
+  font-family:system-ui,sans-serif; font-size:.78rem;}
+.key{display:flex; align-items:center; gap:.35rem; cursor:pointer; user-select:none;
+  color:var(--ink); opacity:1; transition:opacity .15s;}
+.key.off{opacity:.3;}
+.key .dot{width:10px; height:10px; border-radius:50%;}
+footer{color:var(--muted); font-family:system-ui,sans-serif; font-size:.75rem;
+  padding:0 1.5rem 2rem; max-width:52rem;}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="./">buddhomics</a></h1>
+  <nav class="nav">
+    <a href="./" aria-current="page">map</a>
+    <a href="tree.html">tree</a>
+    <a href="about.html">about</a>
+  </nav>
+  <p class="sub">Every text of the Pali canon, placed by what it talks about.
+  TF-IDF over the Pali → SVD → UMAP. Drag to pan, scroll to zoom, hover for a text's
+  strongest terms. Click a legend key to hide a collection.</p>
+</header>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="tip"></div>
+</div>
+<div id="legend"></div>
+<footer>
+  Substrate: <a href="https://github.com/suttacentral/bilara-data">bilara-data</a>
+  (Mahāsaṅgīti Pali). 6,959 texts with ≥200 characters of Pali. Layout is UMAP over
+  100-dim SVD of a 40k-term TF-IDF matrix; proximity means lexical similarity, and
+  cluster shapes are suggestive, not proof.
+</footer>
+<script>
+const COLORS = {
+  dn:"#3D5A80", mn:"#5C7FA6", sn:"#7FA0C4", an:"#A3BEDA",
+  kn:"#8E2A18", vinaya:"#3D6B4F", abhidhamma:"#9A7B2F"
+};
+const NAMES = {
+  dn:"Dīgha Nikāya", mn:"Majjhima Nikāya", sn:"Saṁyutta Nikāya",
+  an:"Aṅguttara Nikāya", kn:"Khuddaka Nikāya", vinaya:"Vinaya",
+  abhidhamma:"Abhidhamma"
+};
+const groupOf = p => p.basket === "vinaya" ? "vinaya"
+  : p.basket === "abhidhamma" ? "abhidhamma" : p.nikaya;
+
+const canvas = document.getElementById("c"), tip = document.getElementById("tip");
+const ctx = canvas.getContext("2d");
+let pts = [], view = {x:0, y:0, k:1}, hidden = new Set(), hover = null;
+
+fetch("map.json").then(r => r.json()).then(data => {
+  pts = data;
+  const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
+  const cx=(Math.min(...xs)+Math.max(...xs))/2, cy=(Math.min(...ys)+Math.max(...ys))/2;
+  const span = Math.max(Math.max(...xs)-Math.min(...xs), Math.max(...ys)-Math.min(...ys));
+  view = {cx, cy, k: 0.9/span, x: 0, y: 0};
+  buildLegend();
+  resize();
+});
+
+function buildLegend(){
+  const el = document.getElementById("legend");
+  for (const g of Object.keys(COLORS)){
+    const n = pts.filter(p=>groupOf(p)===g).length;
+    const k = document.createElement("span");
+    k.className = "key";
+    k.innerHTML = `<span class="dot" style="background:${COLORS[g]}"></span>${NAMES[g]} · ${n}`;
+    k.onclick = () => { hidden.has(g) ? hidden.delete(g) : hidden.add(g);
+      k.classList.toggle("off"); draw(); };
+    el.appendChild(k);
+  }
+}
+
+function resize(){
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * devicePixelRatio;
+  canvas.height = r.height * devicePixelRatio;
+  draw();
+}
+addEventListener("resize", resize);
+
+function toScreen(p){
+  const w = canvas.width, h = canvas.height, s = Math.min(w, h) * view.k;
+  return [w/2 + (p.x - view.cx) * s + view.x * devicePixelRatio,
+          h/2 + (p.y - view.cy) * s + view.y * devicePixelRatio];
+}
+
+function draw(){
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const rad = Math.max(1.6, Math.min(3.2, view.k * 14)) * devicePixelRatio;
+  for (const p of pts){
+    const g = groupOf(p);
+    if (hidden.has(g)) continue;
+    const [x, y] = toScreen(p);
+    if (x < -10 || y < -10 || x > w + 10 || y > h + 10) continue;
+    ctx.globalAlpha = hover && hover !== p ? 0.55 : 0.85;
+    ctx.fillStyle = COLORS[g] || "#888";
+    ctx.beginPath(); ctx.arc(x, y, hover === p ? rad * 1.8 : rad, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+let drag = null;
+canvas.addEventListener("pointerdown", e => {
+  drag = {x: e.clientX - view.x, y: e.clientY - view.y};
+  canvas.setPointerCapture(e.pointerId); canvas.style.cursor = "grabbing";
+});
+canvas.addEventListener("pointerup", e => { drag = null; canvas.style.cursor = "grab"; });
+canvas.addEventListener("pointermove", e => {
+  if (drag){ view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; draw(); return; }
+  const r = canvas.getBoundingClientRect();
+  const mx = (e.clientX - r.left) * devicePixelRatio, my = (e.clientY - r.top) * devicePixelRatio;
+  let best = null, bd = 12 * devicePixelRatio;
+  for (const p of pts){
+    if (hidden.has(groupOf(p))) continue;
+    const [x, y] = toScreen(p);
+    const d = Math.hypot(x - mx, y - my);
+    if (d < bd){ bd = d; best = p; }
+  }
+  if (best !== hover){ hover = best; draw(); }
+  if (best){
+    tip.style.display = "block";
+    tip.style.left = (e.clientX - r.left + 14) + "px";
+    tip.style.top = (e.clientY - r.top + 14) + "px";
+    tip.innerHTML = `<div class="uid">${best.uid}</div>
+      <div class="meta">${best.basket} · ${best.subpath || best.nikaya} · ${best.n} segments</div>
+      <div class="terms">${best.terms.slice(0,6).join(" · ")}</div>
+      <div class="meta">→ suttacentral.net/${best.uid}</div>`;
+  } else tip.style.display = "none";
+});
+canvas.addEventListener("pointerleave", () => { tip.style.display="none"; hover=null; draw(); });
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  const f = Math.exp(-e.deltaY * 0.0015);
+  view.k *= f; view.x *= f; view.y *= f;
+  draw();
+}, {passive: false});
+canvas.addEventListener("click", e => {
+  if (hover) window.open("https://suttacentral.net/" + hover.uid, "_blank");
+});
+</script>
+</body>
+</html>

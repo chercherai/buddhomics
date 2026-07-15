@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>buddhomics — about</title>
+<style>
+:root{ --bg:#FAFAF7; --ink:#212633; --muted:#6B7080; --rule:#DDDCD4; --accent:#8E2A18; }
+@media (prefers-color-scheme: dark){:root{
+  --bg:#15171D; --ink:#DEDCD2; --muted:#8B8F9C; --rule:#2C2F38; --accent:#C9A45C; }}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.6;}
+header{padding:1.2rem 1.5rem .4rem; display:flex; align-items:baseline; gap:1.2rem; flex-wrap:wrap;}
+h1{font-size:1.35rem; margin:0; font-weight:600;}
+h1 a{color:inherit; text-decoration:none}
+.nav{font-family:system-ui,sans-serif; font-size:.8rem;}
+.nav a{color:var(--muted); text-decoration:none; margin-right:1rem;}
+.nav a:hover,.nav a[aria-current]{color:var(--accent);}
+main{margin:1.5rem auto 4rem; padding:0 1.5rem; max-width:44rem;}
+h2{font-size:1.15rem; margin-top:2rem;}
+a{color:var(--accent);}
+.muted{color:var(--muted); font-size:.9rem;}
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="./">buddhomics</a></h1>
+  <nav class="nav">
+    <a href="./">map</a>
+    <a href="tree.html">tree</a>
+    <a href="about.html" aria-current="page">about</a>
+  </nav>
+</header>
+<main>
+  <h2>What this is</h2>
+  <p>A hierarchical explorer of the Pali canon, built on the segment-aligned
+  <a href="https://github.com/suttacentral/bilara-data">bilara-data</a> corpus
+  (Mahāsaṅgīti edition; translations by Bhikkhu Sujato and Bhikkhu Brahmali where
+  available). Each level of the canon — sound, word, segment, discourse, collection,
+  basket — gets its own feature signal and its own view. This first release ships the
+  discourse level (the map) and the collection level (the tree).</p>
+
+  <h2>How the map is made</h2>
+  <p>Each of the 6,959 texts is represented by TF-IDF weights over a 40,000-term
+  Pali vocabulary, reduced to 100 dimensions with truncated SVD, then laid out in 2D
+  with UMAP on cosine distance. Points near each other share vocabulary. The colors
+  are the traditional groupings — the layout knows nothing about them, which is what
+  makes the agreements and the mixtures interesting.</p>
+
+  <h2>How the tree is made</h2>
+  <p>Collections (saṁyuttas, nipātas, books) are averaged into lexical centroids and
+  clustered bottom-up. The result is a tree inferred purely from word use, displayed
+  against the canonical hierarchy. Where the inferred tree keeps canonical siblings
+  together, vocabulary tracks the traditional structure; where it doesn't, something
+  more interesting is going on — genre cutting across baskets, late texts clustering
+  by register, formulaic material finding its kin.</p>
+
+  <h2>Caveats</h2>
+  <p class="muted">Lexical similarity is not doctrine, chronology, or authorship.
+  UMAP distorts global distances by design. Collection centroids blur internal
+  diversity. Treat everything here as a lens for finding questions, not answers.</p>
+</main>
+</body>
+</html>
