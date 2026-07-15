@@ -25,9 +25,11 @@ h1 a{color:inherit; text-decoration:none}
 .sub{color:var(--muted); font-size:.85rem; margin:.15rem 0 0; max-width:60rem;}
 #controls{display:flex; gap:.8rem; align-items:center; flex-wrap:wrap;
   margin:.6rem 1.2rem 0; font-family:system-ui,sans-serif; font-size:.8rem;}
-#q{border:1px solid var(--rule); border-radius:6px; background:var(--card); color:var(--ink);
-  padding:.35rem .65rem; font:inherit; width:15rem;}
-#q:focus{outline:1.5px solid var(--accent);}
+#controls{align-items:center;}
+#q{border:1px solid var(--rule); border-radius:6px; background:var(--bg); color:var(--ink);
+  padding:.4rem .7rem; font:inherit; flex:1 1 20rem; min-width:12rem; max-width:32rem;}
+#q::placeholder{color:var(--muted);}
+#q:focus{outline:1.5px solid var(--accent); background:var(--card);}
 .toggle{display:inline-flex; border:1px solid var(--rule); border-radius:6px; overflow:hidden;}
 .toggle button{border:0; background:transparent; color:var(--muted); padding:.32rem .7rem;
   font:inherit; cursor:pointer;}
@@ -161,7 +163,7 @@ footer a{color:var(--accent)}
   it on the concept map.</p>
 </header>
 <div id="controls">
-  <input id="q" type="search" placeholder="search a Pali stem, English word, uid, or collection…"
+  <input id="q" type="search" placeholder="search Pali, English, or reference…"
     autocomplete="off" spellcheck="false">
   <span class="toggle" role="group" aria-label="concept map labels">
     <button id="lg-pali" aria-pressed="true">Pali</button>
