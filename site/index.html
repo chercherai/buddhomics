@@ -294,6 +294,12 @@ function dictBack(){
   else renderDictEntry(dictCur.w);
 }
 const backBtn = () => dictHist.length ? '<button class="dback">← back</button>' : "";
+const DICT_PLACEHOLDER = dictEl.innerHTML;
+function dictRestore(){
+  if (!dictCur){ dictEl.innerHTML = DICT_PLACEHOLDER; return; }
+  if (dictCur.s !== undefined) renderDictSearch(dictCur.s);
+  else renderDictEntry(dictCur.w);
+}
 const escA = s => esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 const dlink = hw => `<a data-w="${escA(hw)}">${esc(hw)}</a>`;
 // map a dictionary headword (lemma) onto a concept-map token if one exists
@@ -395,7 +401,10 @@ function makeMap(canvasId, tipId, opts){
       M.view.x = nx; M.view.y = ny; M.draw(); return;
     }
     const best = M.pick(e.clientX, e.clientY);
-    if (best !== M.hover){ M.hover = best; M.draw(); }
+    if (best !== M.hover){
+      M.hover = best; M.draw();
+      if (opts.onHover) opts.onHover(best);
+    }
     const r = canvas.getBoundingClientRect();
     if (best){
       tip.style.display = "block";
@@ -406,6 +415,7 @@ function makeMap(canvasId, tipId, opts){
   });
   canvas.addEventListener("pointerleave", () => {
     tip.style.display = "none"; M.hover = null; M.draw();
+    if (opts.onHover) opts.onHover(null);
   });
   canvas.addEventListener("wheel", e => {
     e.preventDefault();
@@ -433,7 +443,8 @@ const CC = makeMap("cc", "tc", {
   pts: () => terms, px: p => p.x, py: p => p.y,
   skip: p => termMatches && !termMatches.has(p),
   tipHtml: p => `<div class="hd" style="font-style:italic">${p.t}</div>
-    <div class="meta">in ${p.df} texts${p.g ? " · " + p.g : ""}</div>`,
+    <div class="meta">in ${p.df} texts${p.g ? " · " + p.g : ""} · click to commit</div>`,
+  onHover: p => { p ? renderDictEntry(p.t.toLowerCase()) : dictRestore(); },
   onClick: p => selectTerm(termIdx.get(p.t)),
   draw: (ctx, M) => {
     const w = M.canvas.width, h = M.canvas.height;
@@ -569,16 +580,30 @@ function buildLegend(){
 }
 
 // ---- taxonomy ----
-function setFilter(set, el, label){
+function termsOfStems(stems){
+  // taxonomy stems -> concept-map tokens ("=x" exact, "~..." phrase: skip)
+  if (!stems || !stems.length) return null;
+  const s = new Set();
+  for (const p of terms){
+    for (const st of stems){
+      if (st[0] === "~") continue;
+      if (st[0] === "=" ? p.t === st.slice(1) : p.t.startsWith(st)){ s.add(p); break; }
+    }
+  }
+  return s.size ? s : null;
+}
+function setFilter(set, el, label, stems){
   if (taxoActive){ taxoActive.classList.remove("active"); }
   taxoActive = null;
   if (el && set){
     taxoActive = el; el.classList.add("active");
-    docMatches = set; termMatches = null;
+    docMatches = set;
+    termMatches = termsOfStems(stems);
     qEl.value = "";
-    setStatus(`<b>${set.size}</b> texts · ${esc(label)}`);
+    const tNote = termMatches ? ` · <b>${termMatches.size}</b> concepts` : "";
+    setStatus(`<b>${set.size}</b> texts${tNote} · ${esc(label)}`);
   } else { docMatches = null; termMatches = null; setStatus(""); }
-  CC.draw(); CD.draw();
+  CC.draw(); CD.draw(); relitReader();
 }
 function buildTaxo(tax){
   const nav = document.getElementById("taxo");
@@ -587,13 +612,13 @@ function buildTaxo(tax){
     for (const a of arrs) for (const i of a) s.add(docs[i]);
     return s;
   };
-  const chip = (n, get, label) => {
+  const chip = (n, get, label, stems) => {
     const b = document.createElement("button");
     b.className = "count"; b.textContent = n;
     b.onclick = e => {
       e.preventDefault(); e.stopPropagation();
       if (taxoActive === b.parentElement){ setFilter(null); return; }
-      setFilter(get(), b.parentElement, label);
+      setFilter(get(), b.parentElement, label, stems);
     };
     return b;
   };
@@ -602,14 +627,16 @@ function buildTaxo(tax){
     const s1 = document.createElement("summary");
     s1.append(h.h);
     const allDocs = h.subs.flatMap(s => s.terms.map(t => t.docs));
-    s1.append(chip(union(allDocs).size, () => union(allDocs), h.h));
+    const allStems = h.subs.flatMap(s => s.terms.flatMap(t => t.stems || []));
+    s1.append(chip(union(allDocs).size, () => union(allDocs), h.h, allStems));
     d1.append(s1);
     for (const sub of h.subs){
       const d2 = document.createElement("details"); d2.className = "lvl2";
       const s2 = document.createElement("summary");
       s2.append(sub.h);
       const subDocs = sub.terms.map(t => t.docs);
-      s2.append(chip(union(subDocs).size, () => union(subDocs), sub.h));
+      const subStems = sub.terms.flatMap(t => t.stems || []);
+      s2.append(chip(union(subDocs).size, () => union(subDocs), sub.h, subStems));
       d2.append(s2);
       for (const term of sub.terms){
         const b = document.createElement("button");
@@ -619,7 +646,10 @@ function buildTaxo(tax){
         b.append(c);
         b.onclick = () => {
           if (taxoActive === b){ setFilter(null); return; }
-          setFilter(union([term.docs]), b, term.t);
+          setFilter(union([term.docs]), b, term.t, term.stems);
+          // single term: show its dictionary entry too
+          const w = term.t.split(/[\s—(]/)[0].toLowerCase();
+          if (w && dict) showDict(w);
         };
         d2.append(b);
       }

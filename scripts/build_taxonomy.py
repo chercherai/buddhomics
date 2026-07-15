@@ -277,7 +277,7 @@ def main() -> None:
             snode = {"h": sub, "terms": []}
             for label, stems in terms:
                 d = docs_for(stems)
-                snode["terms"].append({"t": label, "docs": d})
+                snode["terms"].append({"t": label, "docs": d, "stems": stems})
                 if not d:
                     print(f"  WARNING: no docs for {label} ({stems})")
             node["subs"].append(snode)
