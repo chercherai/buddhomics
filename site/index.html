@@ -319,7 +319,8 @@ function termOfHeadword(hw){
 function lookupCandidates(w){
   const c = [w];
   if (w.endsWith("ṁ")) c.push(w.slice(0, -1), w.slice(0, -1) + "a");
-  for (const [suf, rep] of [["ā","a"],["o","a"],["aṁ","a"],["ena","a"],["āya","ā"],
+  for (const [suf, rep] of [["ā","a"],["ā","ant"],["ā","an"],["ato","ant"],
+    ["antaṁ","ant"],["o","a"],["aṁ","a"],["ena","a"],["āya","ā"],
     ["assa","a"],["ānaṁ","a"],["asmiṁ","a"],["amhi","a"],["esu","a"],["ehi","a"],
     ["āni","a"],["ino","ī"],["issa","i"],["īsu","ī"],["ūsu","ū"],["uno","u"],
     ["ussa","u"],["āyo","ā"],["iyā","ī"],["iyo","ī"]]){
@@ -690,6 +691,15 @@ function paliSpans(s){
 rbody.addEventListener("click", e => {
   const t = e.target.closest(".w");
   if (t) wordClick(t.dataset.w);
+});
+// hover previews the definition; click commits (mirrors the concept map)
+rbody.addEventListener("mouseover", e => {
+  const t = e.target.closest(".w");
+  if (t) renderDictEntry(t.dataset.w);
+});
+rbody.addEventListener("mouseout", e => {
+  const t = e.target.closest(".w");
+  if (t) dictRestore();
 });
 function relitReader(){
   const litSet = termMatches && termMatches.size <= 50
