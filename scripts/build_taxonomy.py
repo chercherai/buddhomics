@@ -323,12 +323,20 @@ def main() -> None:
 
     trans_subs = [{"h": "By language", "terms": [
         {"t": name, "docs": d} for name, d in by_lang]}]
+    # marker colours match the reader (READER_DOT); humans render as circles,
+    # machines as squares (sq) — the categories list doubles as the legend
+    DOT = {"sujato": "#60a5fa", "brahmali": "#f59e0b", "kelly": "#4ade80",
+           "soma": "#f472b6", "suddhaso": "#a3e635", "kovilo": "#fb923c",
+           "anandajoti": "#e879f9", "patton": "#22d3ee",
+           "claude-fable-5": "#a78bfa", "gpt-5.6-sol": "#2dd4bf"}
     if human:
         trans_subs.append({"h": "Human (English)", "terms": [
-            {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d)} for t, d in human]})
+            {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d), "dot": DOT.get(t)}
+            for t, d in human]})
     if machine:
         trans_subs.append({"h": "Machine (English)", "terms": [
-            {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d)} for t, d in machine]})
+            {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d), "dot": DOT.get(t), "sq": True}
+            for t, d in machine]})
     tree.append({"h": "Translations", "subs": trans_subs})
 
     # Sort each subgroup's terms by document count (most-cited first), EXCEPT

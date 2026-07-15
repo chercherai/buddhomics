@@ -58,6 +58,12 @@ h1 a{color:inherit; text-decoration:none}
   border:0; background:transparent; color:var(--ink); font:inherit; text-align:left;
   padding:.2rem .35rem .2rem 1.6rem; border-radius:5px; cursor:pointer;}
 #taxo .term:hover{background:var(--card);}
+.mark{display:inline-block; width:.5rem; height:.5rem; border-radius:50%;
+  vertical-align:baseline;}
+.mark.sq{border-radius:1px;}
+#taxo .term .mark{margin-right:.4rem;}
+.rtrans .mark{margin-right:.3rem;}
+#rbody .e .mark{margin-left:.35rem;}
 #taxo .count{margin-left:auto; color:var(--muted); font-size:.68rem;
   font-variant-numeric:tabular-nums; border:0; background:transparent; font-family:inherit;
   cursor:pointer; padding:.05rem .3rem; border-radius:8px;}
@@ -118,8 +124,6 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
   padding:.12rem .5rem; border-radius:5px; cursor:pointer; font:inherit;}
 .rtrans button[aria-pressed="true"]{background:var(--card); color:var(--accent); font-weight:600;
   border-color:var(--card);}
-#rbody .prov{display:inline-block; width:.5rem; height:.5rem; border-radius:50%;
-  margin-left:.35rem; vertical-align:baseline; opacity:.9;}
 .rview{font-size:.68rem; margin-left:auto;}
 .rview button{padding:.12rem .55rem;}
 #rbody{overflow-y:auto; padding:.7rem .9rem 2rem; line-height:1.5; font-size:.9rem; flex:1;}
@@ -242,15 +246,20 @@ let termIdx = new Map();          // term string -> index
 const docIdx = new Map();         // doc point -> row index (for concept co-occurrence)
 let termMatches = null, docMatches = null;   // Sets of point objects
 let hiddenGroups = new Set(), taxoActive = null, currentDoc = null;
-let readerDoc = null, readerSel = null;         // open doc JSON + active translator selection
+let readerDoc = null, readerActive = new Set();  // open doc JSON + active translator ids
 let readerView = "both";                         // pali | both | english display mode
 const READER_NAMES = {sujato:"Bhikkhu Sujato", brahmali:"Bhikkhu Brahmali",
   kelly:"John Kelly", soma:"Bhikkhu Soma", patton:"Charles Patton",
   suddhaso:"Bhikkhu Suddhāso", anandajoti:"Bhikkhu Ānandajoti", kovilo:"Bhikkhu Kovilo",
   "claude-fable-5":"Claude Fable 5", "gpt-5.6-sol":"GPT-5.6"};
-// per-model dot colours for provenance markers (copy-paste-safe: empty spans)
-const READER_DOT = {"claude-fable-5":"#a78bfa", "gpt-5.6-sol":"#2dd4bf"};
-const provDot = m => `<span class="prov" style="background:${READER_DOT[m] || "#888"}" title="${escA(READER_NAMES[m] || m)}"></span>`;
+// per-translator marker colours (copy-paste-safe: empty spans). Humans render as
+// circles, machines as squares (.sq) — see readerKind, set per open doc.
+const READER_DOT = {sujato:"#60a5fa", brahmali:"#f59e0b", kelly:"#4ade80", soma:"#f472b6",
+  suddhaso:"#a3e635", kovilo:"#fb923c", anandajoti:"#e879f9", patton:"#22d3ee",
+  "claude-fable-5":"#a78bfa", "gpt-5.6-sol":"#2dd4bf"};
+let readerKind = {};   // translator id -> "human"|"machine", for the open doc
+const provMark = id => `<span class="mark${readerKind[id] === "machine" ? " sq" : ""}" `
+  + `style="background:${READER_DOT[id] || "#888"}" title="${escA(READER_NAMES[id] || id)}"></span>`;
 let names = null, conceptLang = "pali";        // DPPN names; concept-label language
 const dpdShards = new Map();                    // shard key -> {form: [defs]}
 let dictReqToken = 0;                           // guards async dict renders against races
@@ -911,7 +920,14 @@ function buildTaxo(tax){
       d2.append(s2);
       for (const term of sub.terms){
         const b = document.createElement("button");
-        b.className = "term"; b.append(term.t);
+        b.className = "term";
+        if (term.dot){
+          const mk = document.createElement("span");
+          mk.className = "mark" + (term.sq ? " sq" : "");
+          mk.style.background = term.dot;
+          b.append(mk);
+        }
+        b.append(term.t);
         const c = document.createElement("span");
         c.className = "count"; c.textContent = term.docs.length;
         b.append(c);
@@ -937,9 +953,11 @@ const textCache = new Map();
 rhead.querySelector(".rtrans").addEventListener("click", e => {
   const b = e.target.closest("button[data-sel]");
   if (!b || !readerDoc) return;
-  readerSel = b.dataset.sel;
-  for (const btn of rhead.querySelectorAll(".rtrans button"))
-    btn.setAttribute("aria-pressed", btn === b);
+  const id = b.dataset.sel;
+  if (readerActive.has(id)){
+    if (readerActive.size > 1) readerActive.delete(id);   // keep at least one active
+  } else readerActive.add(id);
+  b.setAttribute("aria-pressed", readerActive.has(id));
   renderReaderBody();
 });
 rhead.querySelector(".rview").addEventListener("click", e => {
@@ -986,57 +1004,48 @@ function relitReader(){
     el.classList.toggle("lit", !!(litSet && litSet.has(el.dataset.w)));
   }
 }
-// "machine" is a synthetic switcher group spanning every machine-kind translator
-// (Fable, GPT), so a doc translated by more than one model reads as one option
-// with per-segment provenance tags rather than several incomplete ones.
-const isMachine = t => readerDoc && readerDoc.translators.some(x => x.id === t && x.kind === "machine");
-function enOfSeg(td, sel){          // [english, provenanceModelId|null] under selection sel
-  if (!td) return [null, null];
-  if (sel === "machine"){
-    const mid = readerDoc.translators.find(x => x.kind === "machine" && td[x.id]);
-    return mid ? [td[mid.id], mid.id] : [null, null];
-  }
-  return [td[sel] ?? null, null];
+// Every available translator is an independent toggle (human = circle marker,
+// machine = square). Default activates the best translator; if that's a machine
+// model, all machine models come on together (the machine layer is disjoint per
+// segment, so this completes the doc). The user can then show any combination.
+function defaultActive(doc){
+  const act = new Set();
+  if (!doc.translators.length) return act;
+  const prim = doc.default || doc.translators[0].id;
+  act.add(prim);
+  if ((doc.translators.find(t => t.id === prim) || {}).kind === "machine")
+    for (const t of doc.translators) if (t.kind === "machine") act.add(t.id);
+  return act;
 }
 
 function buildSwitcher(){
-  const rt = rhead.querySelector(".rtrans");
-  const humans = readerDoc.translators.filter(t => t.kind === "human");
-  const machines = readerDoc.translators.filter(t => t.kind === "machine");
-  const nm = t => READER_NAMES[t.id] || t.name;
-  const opts = humans.map(t => ({sel: t.id, html: esc(nm(t))}));
-  if (machines.length){
-    // mixed machine models: carry their dots on the button so it keys the
-    // per-segment provenance dots (single model needs no legend)
-    const dots = machines.length > 1 ? " " + machines.map(t => provDot(t.id)).join("") : "";
-    opts.push({sel: "machine", html: esc(machines.length > 1 ? "Machine" : nm(machines[0])) + dots});
-  }
-  // always render, even with one option — the selector is the translator indicator
-  rt.innerHTML = opts.map(o =>
-    `<button data-sel="${escA(o.sel)}" aria-pressed="${o.sel === readerSel}">${o.html}</button>`
+  rhead.querySelector(".rtrans").innerHTML = readerDoc.translators.map(t =>
+    `<button data-sel="${escA(t.id)}" aria-pressed="${readerActive.has(t.id)}">`
+    + `${provMark(t.id)}${esc(READER_NAMES[t.id] || t.name)}</button>`
   ).join("");
 }
 
 function renderReaderBody(){
-  const doc = readerDoc, sel = readerSel;
-  const machineModels = new Set(
-    doc.segs.map(s => enOfSeg(s[2], sel)[1]).filter(Boolean));
-  const parts = [];
-  const tagProv = machineModels.size > 1;   // only tag per-segment when models are mixed
+  const doc = readerDoc, parts = [];
+  const multi = readerActive.size > 1;   // mark provenance only when ambiguous
+  const active = doc.translators.filter(t => readerActive.has(t.id));
   for (const [sid, pali, td] of doc.segs){
-    const [en, model] = enOfSeg(td, sel);
     if (/:0\./.test(sid)){
-      const t = (en || pali || "").trim();
-      if (t) parts.push(`<h3>${richText(t)}</h3>`);
+      let ht = null;
+      for (const t of active) if (td[t.id]) { ht = td[t.id]; break; }
+      ht = (ht || pali || "").trim();
+      if (ht) parts.push(`<h3>${richText(ht)}</h3>`);
       continue;
     }
     parts.push('<div class="seg">');
     if (readerView !== "english" && pali && pali.trim())
       parts.push(`<p class="p">${paliSpans(pali.trim())}</p>`);
-    if (readerView !== "pali" && en && en.trim()){
-      const prov = tagProv && model ? provDot(model) : "";
-      parts.push(`<p class="e">${richText(en.trim())}${prov}</p>`);
-    }
+    if (readerView !== "pali")
+      for (const t of active){          // one English line per active translator that has it
+        const en = td[t.id];
+        if (en && en.trim())
+          parts.push(`<p class="e">${richText(en.trim())}${multi ? provMark(t.id) : ""}</p>`);
+      }
     parts.push('</div>');
   }
   rbody.innerHTML = parts.join("");
@@ -1064,9 +1073,9 @@ async function openReader(p){
       if (textCache.size > 40) textCache.delete(textCache.keys().next().value);
     }
     readerDoc = doc;
-    // resolve default (a translator id) to its switcher selection (human id or "machine")
-    readerSel = doc.default ? (isMachine(doc.default) ? "machine" : doc.default) : null;
-    if (!readerSel && !doc.translators.length){
+    readerKind = {}; doc.translators.forEach(t => { readerKind[t.id] = t.kind; });
+    readerActive = defaultActive(doc);
+    if (!doc.translators.length){
       const untr = doc.segs.filter(s => s[1]).length;
       rbody.innerHTML = `<p class="note">Untranslated — ${untr} Pali segments, no English yet. Click any Pali word to look it up.</p>` +
         doc.segs.map(([sid, pali]) => /:0\./.test(sid)
