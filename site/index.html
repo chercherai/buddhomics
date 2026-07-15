@@ -655,7 +655,8 @@ const dimC = () => getComputedStyle(document.documentElement)
 function drawClusterLabels(ctx, M, data){
   if (!data) return;
   const ratio = M.fitK ? M.view.k / M.fitK : 1;
-  const lvl = ratio < 1.8 ? 0 : ratio < 4 ? 1 : ratio < 9 ? 2 : -1;
+  // zoomed out past this point (largest view height) all labels disappear
+  const lvl = ratio < 0.8 ? -1 : ratio < 1.8 ? 0 : ratio < 4 ? 1 : ratio < 9 ? 2 : -1;
   if (lvl < 0 || !data.levels[lvl]) return -1;
   const css = getComputedStyle(document.documentElement);
   const ink = css.getPropertyValue("--ink").trim();
