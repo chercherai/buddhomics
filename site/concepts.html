@@ -161,10 +161,12 @@ function draw(){
     visible.push([p, x, y]);
   }
   const labelAll = visible.length <= 250;
+  const dimColor = getComputedStyle(document.documentElement)
+    .getPropertyValue("--rule").trim() || "#999";
   for (const [p, x, y] of visible){
     const dim = matches && !matches.has(p);
-    ctx.globalAlpha = dim ? 0.08 : (p.g ? 0.95 : 0.45);
-    ctx.fillStyle = p.g ? GCOLORS[p.g] : "#9a978f";
+    ctx.globalAlpha = dim ? 0.5 : (p.g ? 0.95 : 0.45);
+    ctx.fillStyle = dim ? dimColor : (p.g ? GCOLORS[p.g] : "#9a978f");
     const r = radius(p) * devicePixelRatio * (hover === p ? 1.6 : 1);
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
     if (!dim && (labelAll || (p.g && !matches && visible.length <= 1500) || hover === p)){

@@ -311,14 +311,16 @@ function draw(){
   if (!pts.length || !view()) return;
   const w = canvas.width, h = canvas.height;
   ctx.clearRect(0, 0, w, h);
+  const dimColor = getComputedStyle(document.documentElement)
+    .getPropertyValue("--rule").trim() || "#999";
   for (const p of pts){
     const g = groupOf(p);
     if (hidden.has(g)) continue;
     const [x, y] = toScreen(p);
     if (x < -12 || y < -12 || x > w + 12 || y > h + 12) continue;
     const dim = matches && !matches.has(p);
-    ctx.globalAlpha = dim ? 0.10 : (hover === p ? 1 : 0.85);
-    ctx.fillStyle = COLORS[g] || "#888";
+    ctx.globalAlpha = dim ? 0.55 : (hover === p ? 1 : 0.85);
+    ctx.fillStyle = dim ? dimColor : (COLORS[g] || "#888");
     const r = radius(p) * devicePixelRatio * (hover === p ? 1.6 : 1);
     ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
     if (matches && matches.has(p) && matches.size <= 400){
