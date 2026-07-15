@@ -33,6 +33,8 @@ h1 a{color:inherit; text-decoration:none}
 #status button{border:0; background:transparent; color:var(--muted); cursor:pointer;
   font:inherit; text-decoration:underline; padding:0 0 0 .5rem;}
 #wrap{display:flex; gap:.6rem; margin:.5rem 1.2rem; align-items:stretch; height:76vh;}
+/* column order: taxonomy · texts · reader+dict · concepts (both desktop & mobile) */
+#taxo{order:1;} #tpane{order:2;} #right{order:3;} #cpane{order:4;}
 #taxo{width:13rem; flex:none; overflow-y:auto; border:1px solid var(--rule);
   border-radius:6px; padding:.5rem .4rem 1rem; font-family:system-ui,sans-serif;
   font-size:.76rem;}
