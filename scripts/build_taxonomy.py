@@ -110,7 +110,7 @@ TAXONOMY = [
             ("Vajjī", ["=vajjī", "=vajjīnaṁ", "vajjiput"]),
         ]),
     ]),
-    ("Language", [
+    ("Rhetoric", [
         ("Openings & formulas", [
             ("evaṁ me sutaṁ — “thus have I heard”", ["~evaṁ me sutaṁ"]),
             ("sāvatthinidāna — the Sāvatthī setting", ["sāvatthinidān"]),
@@ -226,6 +226,50 @@ def main() -> None:
             hits = hits | set(np.where(mask)[0].tolist())
         return sorted(hits)
 
+    # ---- Translations: which languages each text is available in ----
+    LANG_NAMES = {
+        "en": "English", "de": "German", "ru": "Russian", "sr": "Serbian",
+        "fr": "French", "lt": "Lithuanian", "it": "Italian", "pt": "Portuguese",
+        "pl": "Polish", "tr": "Turkish", "jpn": "Japanese", "es": "Spanish",
+        "zh": "Chinese", "vi": "Vietnamese", "id": "Indonesian", "et": "Estonian",
+        "cs": "Czech", "nl": "Dutch", "no": "Norwegian", "fi": "Finnish",
+        "sl": "Slovenian", "ko": "Korean", "hi": "Hindi", "gu": "Gujarati",
+        "mr": "Marathi", "ta": "Tamil", "kan": "Kannada", "ka": "Georgian",
+        "si": "Sinhala", "th": "Thai", "my": "Burmese", "lo": "Lao",
+        "gsw": "Swiss German",
+    }
+    uid_pos = {u: i for i, u in enumerate(uids)}
+    tdir = REPO / "data" / "bilara-data" / "translation"
+    lang_docs: dict[str, set[int]] = {}
+    for langdir in sorted(tdir.iterdir()):
+        if not langdir.is_dir():
+            continue
+        hits = set()
+        for f in langdir.rglob("*.json"):
+            i = uid_pos.get(f.name.split("_")[0])
+            if i is not None:
+                hits.add(i)
+        if hits:
+            lang_docs[langdir.name] = hits
+
+    en = lang_docs.get("en", set())
+    trans_node = ("Translations", [
+        ("Coverage", [
+            ("has English", None),   # filled below
+            ("no English yet", None),
+        ]),
+        ("By language", []),
+    ])
+    coverage_docs = {
+        "has English": sorted(en),
+        "no English yet": sorted(set(range(len(uids))) - en),
+    }
+    by_lang = sorted(
+        ((LANG_NAMES.get(l, l.title()), d) for l, d in lang_docs.items()
+         if l != "en" and len(d) >= 25),
+        key=lambda kv: -len(kv[1]),
+    )
+
     tree = []
     for header, subs in TAXONOMY:
         node = {"h": header, "subs": []}
@@ -238,6 +282,15 @@ def main() -> None:
                     print(f"  WARNING: no docs for {label} ({stems})")
             node["subs"].append(snode)
         tree.append(node)
+
+    tree.append({"h": "Translations", "subs": [
+        {"h": "Coverage", "terms": [
+            {"t": t, "docs": d} for t, d in coverage_docs.items()
+        ]},
+        {"h": "By language", "terms": [
+            {"t": name, "docs": sorted(d)} for name, d in by_lang
+        ]},
+    ]})
 
     out = {"order": uids, "tree": tree}
     (A / "taxonomy.json").write_text(json.dumps(out, ensure_ascii=False))
