@@ -67,6 +67,9 @@ h1 a{color:inherit; text-decoration:none}
 .pane .pl{position:absolute; top:.45rem; left:.6rem; z-index:2;
   font-family:system-ui,sans-serif; font-size:.65rem; letter-spacing:.1em;
   text-transform:uppercase; color:var(--muted); pointer-events:none;}
+.langtoggle{position:absolute; top:.4rem; right:.5rem; z-index:3;
+  font-family:system-ui,sans-serif; font-size:.72rem; background:var(--bg);}
+.langtoggle button{padding:.2rem .55rem;}
 canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
   border-radius:6px; background:var(--bg); cursor:grab; touch-action:none;}
 .tip{position:absolute; pointer-events:none; display:none; max-width:15rem;
@@ -165,15 +168,15 @@ footer a{color:var(--accent)}
 <div id="controls">
   <input id="q" type="search" placeholder="search Pali, English, or reference…"
     autocomplete="off" spellcheck="false">
-  <span class="toggle" role="group" aria-label="concept map labels">
-    <button id="lg-pali" aria-pressed="true">Pali</button>
-    <button id="lg-en" aria-pressed="false">English</button>
-  </span>
   <span id="status"></span>
 </div>
 <div id="wrap">
   <nav id="taxo" aria-label="browse by topic"></nav>
   <div class="pane" id="cpane"><span class="pl">concepts · green = in dictionary</span>
+    <span class="toggle langtoggle" role="group" aria-label="concept map labels">
+      <button id="lg-pali" aria-pressed="true">Pali</button>
+      <button id="lg-en" aria-pressed="false">English</button>
+    </span>
     <canvas id="cc"></canvas><div class="tip" id="tc"></div></div>
   <div class="pane" id="tpane"><span class="pl">texts</span>
     <canvas id="cd"></canvas><div class="tip" id="td"></div></div>
@@ -681,11 +684,6 @@ const CD = makeMap("cd", "td", {
       const r = rOf(p);
       ctx.globalAlpha = M.hover === p ? 1 : 0.85; ctx.fillStyle = DCOLORS[groupOf(p)] || "#888";
       ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-      if (docMatches && docMatches.has(p) && docMatches.size <= 400){
-        ctx.globalAlpha = 0.9; ctx.strokeStyle = DCOLORS[groupOf(p)] || "#888";
-        ctx.lineWidth = devicePixelRatio;
-        ctx.beginPath(); ctx.arc(x, y, r + 2.5 * devicePixelRatio, 0, 7); ctx.stroke();
-      }
       if (p === currentDoc){
         ctx.globalAlpha = 1; ctx.strokeStyle = accent;
         ctx.lineWidth = 1.6 * devicePixelRatio;
