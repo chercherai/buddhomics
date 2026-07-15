@@ -161,7 +161,7 @@ footer a{color:var(--accent)}
   it on the concept map.</p>
 </header>
 <div id="controls">
-  <input id="q" type="search" placeholder="search uid, collection, or Pali term…"
+  <input id="q" type="search" placeholder="search a Pali stem, English word, uid, or collection…"
     autocomplete="off" spellcheck="false">
   <span class="toggle" role="group" aria-label="concept map labels">
     <button id="lg-pali" aria-pressed="true">Pali</button>
@@ -240,6 +240,23 @@ async function dpdShard(key){
   return j;
 }
 const dpdLine = d => esc(d).replace(/&lt;(\/?b)&gt;/g, "<$1>");
+
+// Pali full-text search: lemma->docs postings, sharded by prefix (lazy)
+const plemShards = new Map();
+async function plemShard(key){
+  if (plemShards.has(key)) return plemShards.get(key);
+  let j = {};
+  try { const r = await fetch("plem/" + key + ".json", {cache: "force-cache"});
+        if (r.ok) j = await r.json(); } catch (e) {}
+  plemShards.set(key, j);
+  return j;
+}
+async function paliDocs(q){                 // docs whose text has a lemma starting with q
+  const shard = await plemShard(shardKey(q));
+  const s = new Set();
+  for (const lem in shard) if (lem.startsWith(q)) for (const i of shard[lem]) s.add(docs[i]);
+  return s;
+}
 const DICT_YES = "#3f7d5e", DICT_NO = "#9b9384";   // concept map: in-dictionary vs not
 // a filter (search/taxonomy) restricts picking to matches; a plain click-selection
 // highlights but keeps everything pickable, and a click on empty space clears it.
@@ -713,26 +730,34 @@ function renderDictSearch(q){
     <p class="empty">no dictionary matches</p>`;
   return entryHw ? [entryHw, ...hwHits, ...defHits] : [...hwHits, ...defHits];
 }
-qEl.addEventListener("input", () => {
+let searchToken = 0;
+qEl.addEventListener("input", async () => {
   if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
   const q = qEl.value.trim().toLowerCase();
+  const token = ++searchToken;
   if (!q){ docMatches = null; termMatches = null; setStatus(""); CC.draw(); CD.draw(); return; }
+  // instant: uid / collection / top-terms / English full-text
   docMatches = new Set(docs.filter(p =>
     p.uid.toLowerCase().includes(q) ||
     (p.subpath || "").toLowerCase().includes(q) ||
     p.terms.some(t => t.includes(q))));
-  const nPali = docMatches.size;
   for (const p of docsOfEnglish(q)) docMatches.add(p);
   termMatches = new Set(terms.filter(p => p.t.includes(q)));
-  const enNote = docMatches.size > nPali
-    ? ` (${docMatches.size - nPali} via English)` : "";
-  // dictionary hits (headwords + definition matches) join the concept highlight
-  for (const hw of searchDict(q)){
+  for (const hw of searchDict(q)){       // dict hits also light the concept map
     const p = termOfHeadword(hw);
     if (p) termMatches.add(p);
   }
-  setStatus(`<b>${docMatches.size}</b> texts${enNote} · <b>${termMatches.size}</b> terms match “${esc(q)}”`);
-  CC.draw(); CD.draw();
+  const status = () => setStatus(
+    `<b>${docMatches.size}</b> texts · <b>${termMatches.size}</b> terms match “${esc(q)}”`);
+  status(); CC.draw(); CD.draw();
+  // async: Pali full-text via lemma shards (collapses inflected forms)
+  if (q.length >= 2){
+    const pali = await paliDocs(q);
+    if (token !== searchToken) return;   // a newer keystroke superseded this
+    let added = false;
+    for (const p of pali) if (!docMatches.has(p)){ docMatches.add(p); added = true; }
+    if (added){ status(); CC.draw(); CD.draw(); }
+  }
 });
 qEl.addEventListener("keydown", e => {
   if (e.key === "Escape"){ qEl.value = ""; qEl.dispatchEvent(new Event("input")); qEl.blur(); }
