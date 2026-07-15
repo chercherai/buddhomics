@@ -252,24 +252,6 @@ def main() -> None:
         if hits:
             lang_docs[langdir.name] = hits
 
-    en = lang_docs.get("en", set())
-    trans_node = ("Translations", [
-        ("Coverage", [
-            ("has English", None),   # filled below
-            ("no English yet", None),
-        ]),
-        ("By language", []),
-    ])
-    coverage_docs = {
-        "has English": sorted(en),
-        "no English yet": sorted(set(range(len(uids))) - en),
-    }
-    by_lang = sorted(
-        ((LANG_NAMES.get(l, l.title()), d) for l, d in lang_docs.items()
-         if l != "en" and len(d) >= 25),
-        key=lambda kv: -len(kv[1]),
-    )
-
     tree = []
     for header, subs in TAXONOMY:
         node = {"h": header, "subs": []}
@@ -283,26 +265,27 @@ def main() -> None:
             node["subs"].append(snode)
         tree.append(node)
 
-    tree.append({"h": "Translations", "subs": [
-        {"h": "Coverage", "terms": [
-            {"t": t, "docs": d} for t, d in coverage_docs.items()
-        ]},
-        {"h": "By language", "terms": [
-            {"t": name, "docs": sorted(d)} for name, d in by_lang
-        ]},
-    ]})
-
-    # ---- Translator: who produced the English (per-doc, from the substrate) ----
+    # ---- Translations: language availability + who produced the English ----
     MACHINE = {"claude-fable-5", "gpt-5.6-sol"}
     TR_NAMES = {"sujato": "Bhikkhu Sujato", "brahmali": "Bhikkhu Brahmali",
                 "kelly": "John Kelly", "kovilo": "Bhikkhu Kovilo",
                 "soma": "Bhikkhu Soma", "suddhaso": "Bhikkhu Suddhāso",
                 "patton": "Charles Patton", "anandajoti": "Bhikkhu Ānandajoti",
                 "claude-fable-5": "Claude Fable 5", "gpt-5.6-sol": "GPT-5.6"}
+    docmeta = pl.read_parquet(A / "documents.parquet")
+
+    # English availability = any English at all (human OR machine), from the substrate
+    frac = dict(docmeta.select("uid", "translated_frac").iter_rows())
+    english = {i for i, u in enumerate(uids) if (frac.get(u) or 0) > 0}
+    by_lang = [("English", sorted(english))] + sorted(
+        ((LANG_NAMES.get(l, l.title()), sorted(d)) for l, d in lang_docs.items()
+         if l != "en" and len(d) >= 25),
+        key=lambda kv: -len(kv[1]),
+    )
+
     # categorize by every AVAILABLE translator (not just the doc's primary), so
     # alternate sc-data humans and the GPT fallback both surface; a doc appears
     # under each translator that has a version of it
-    docmeta = pl.read_parquet(A / "documents.parquet")
     uid_trs = dict(docmeta.select("uid", "translators").iter_rows())
     tr_docs: dict[str, list[int]] = {}
     for i, u in enumerate(uids):
@@ -312,14 +295,16 @@ def main() -> None:
                    key=lambda kv: -len(kv[1]))
     machine = sorted(((t, d) for t, d in tr_docs.items() if t in MACHINE),
                      key=lambda kv: -len(kv[1]))
-    tr_node = {"h": "Translator", "subs": []}
+
+    trans_subs = [{"h": "By language", "terms": [
+        {"t": name, "docs": d} for name, d in by_lang]}]
     if human:
-        tr_node["subs"].append({"h": "Human", "terms": [
+        trans_subs.append({"h": "Human", "terms": [
             {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d)} for t, d in human]})
     if machine:
-        tr_node["subs"].append({"h": "Machine", "terms": [
+        trans_subs.append({"h": "Machine", "terms": [
             {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d)} for t, d in machine]})
-    tree.append(tr_node)
+    tree.append({"h": "Translations", "subs": trans_subs})
 
     out = {"order": uids, "tree": tree}
     (A / "taxonomy.json").write_text(json.dumps(out, ensure_ascii=False))

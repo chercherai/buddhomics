@@ -23,9 +23,10 @@ OUT = REPO / "site" / "texts"
 
 ORDER = HUMAN_PREF + MACHINE_PREF
 NAMES = {
-    "sujato": "Sujato", "brahmali": "Brahmali", "kelly": "Kelly", "soma": "Soma",
-    "patton": "Patton", "suddhaso": "Suddhaso", "anandajoti": "Anandajoti",
-    "kovilo": "Kovilo", "claude-fable-5": "Claude Fable 5", "gpt-5.6-sol": "GPT-5.6",
+    "sujato": "Bhikkhu Sujato", "brahmali": "Bhikkhu Brahmali", "kelly": "John Kelly",
+    "soma": "Bhikkhu Soma", "patton": "Charles Patton", "suddhaso": "Bhikkhu Suddhāso",
+    "anandajoti": "Bhikkhu Ānandajoti", "kovilo": "Bhikkhu Kovilo",
+    "claude-fable-5": "Claude Fable 5", "gpt-5.6-sol": "GPT-5.6",
 }
 
 

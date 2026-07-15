@@ -236,8 +236,9 @@ const docIdx = new Map();         // doc point -> row index (for concept co-occu
 let termMatches = null, docMatches = null;   // Sets of point objects
 let hiddenGroups = new Set(), taxoActive = null, currentDoc = null;
 let readerDoc = null, readerSel = null;         // open doc JSON + active translator selection
-const READER_NAMES = {sujato:"Sujato", brahmali:"Brahmali", kelly:"Kelly", soma:"Soma",
-  patton:"Patton", suddhaso:"Suddhaso", anandajoti:"Anandajoti", kovilo:"Kovilo",
+const READER_NAMES = {sujato:"Bhikkhu Sujato", brahmali:"Bhikkhu Brahmali",
+  kelly:"John Kelly", soma:"Bhikkhu Soma", patton:"Charles Patton",
+  suddhaso:"Bhikkhu Suddhāso", anandajoti:"Bhikkhu Ānandajoti", kovilo:"Bhikkhu Kovilo",
   "claude-fable-5":"Claude Fable 5", "gpt-5.6-sol":"GPT-5.6"};
 let names = null, conceptLang = "pali";        // DPPN names; concept-label language
 const dpdShards = new Map();                    // shard key -> {form: [defs]}
@@ -931,6 +932,10 @@ rhead.querySelector(".rtrans").addEventListener("click", e => {
   renderReaderBody();
 });
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// bilara/machine text carries inline markup: render <b>/<i>/<em> as formatting,
+// drop <a>/<j> (keep their inner text) so no raw tags ever show in the reader
+const richText = s => esc(String(s).replace(/<\/?(?:a|j)\b[^>]*>/gi, ""))
+  .replace(/&lt;(\/?(?:b|i|em))&gt;/gi, "<$1>");
 const WORD = /[A-Za-zāīūṁṃṅñṭḍṇḷĀĪŪṀṂṄÑṬḌṆḶ’']+/g;
 
 function paliSpans(s){
@@ -979,9 +984,10 @@ function buildSwitcher(){
   const rt = rhead.querySelector(".rtrans");
   const humans = readerDoc.translators.filter(t => t.kind === "human");
   const machines = readerDoc.translators.filter(t => t.kind === "machine");
-  const opts = humans.map(t => ({sel: t.id, label: t.name}));
+  const nm = t => READER_NAMES[t.id] || t.name;
+  const opts = humans.map(t => ({sel: t.id, label: nm(t)}));
   if (machines.length)
-    opts.push({sel: "machine", label: machines.length > 1 ? "Machine" : machines[0].name});
+    opts.push({sel: "machine", label: machines.length > 1 ? "Machine" : nm(machines[0])});
   rt.innerHTML = opts.length > 1 ? opts.map(o =>
     `<button data-sel="${escA(o.sel)}" aria-pressed="${o.sel === readerSel}">${esc(o.label)}</button>`
   ).join("") : "";
@@ -998,7 +1004,7 @@ function renderReaderBody(){
     const which = [...machineModels].map(m => (READER_NAMES[m] || m)).join(" + ") || "Claude Fable 5";
     parts.push(`<p class="note">English: <b>machine translation by ${esc(which)}</b> — a trial rendering, not a published translation. Click any Pali word to look it up; dotted words are on the concept map.</p>`);
   } else {
-    const nm = (doc.translators.find(t => t.id === sel) || {}).name || sel;
+    const nm = READER_NAMES[sel] || (doc.translators.find(t => t.id === sel) || {}).name || sel;
     const gap = total && cov < total * 0.95 ? ` · ${total - cov} segments untranslated by ${esc(nm)}` : "";
     parts.push(`<p class="note">English: ${esc(nm)} (via bilara-data)${gap}. Click any Pali word to look it up; dotted words are on the concept map.</p>`);
   }
@@ -1007,14 +1013,14 @@ function renderReaderBody(){
     const [en, model] = enOfSeg(td, sel);
     if (/:0\./.test(sid)){
       const t = (en || pali || "").trim();
-      if (t) parts.push(`<h3>${esc(t)}</h3>`);
+      if (t) parts.push(`<h3>${richText(t)}</h3>`);
       continue;
     }
     parts.push('<div class="seg">');
     if (pali && pali.trim()) parts.push(`<p class="p">${paliSpans(pali.trim())}</p>`);
     if (en && en.trim()){
       const prov = tagProv && model ? `<span class="prov">${esc(READER_NAMES[model] || model)}</span>` : "";
-      parts.push(`<p class="e">${esc(en.trim())}${prov}</p>`);
+      parts.push(`<p class="e">${richText(en.trim())}${prov}</p>`);
     }
     parts.push('</div>');
   }
