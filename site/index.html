@@ -199,7 +199,7 @@ const GCOLORS = {
 const groupOf = p => p.basket === "vinaya" ? "vinaya"
   : p.basket === "abhidhamma" ? "abhidhamma" : p.nikaya;
 
-let terms = [], docs = [], bits = null, BPR = 0, dict = null, clusters = null;
+let terms = [], docs = [], bits = null, BPR = 0, dict = null, clusters = null, textClusters = null;
 let termIdx = new Map();          // term string -> index
 let termMatches = null, docMatches = null;   // Sets of point objects
 let hiddenGroups = new Set(), taxoActive = null, currentDoc = null;
@@ -226,6 +226,8 @@ Promise.all([
 fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => { dict = d; markHd(); });
 fetch("concept_clusters.json", {cache:"no-cache"}).then(r => r.json())
   .then(c => { clusters = c; CC.draw(); }).catch(() => {});
+fetch("text_clusters.json", {cache:"no-cache"}).then(r => r.json())
+  .then(c => { textClusters = c; CD.draw(); }).catch(() => {});
 
 // tag each concept term with whether NCPED has an entry (colours the concept map)
 function markHd(){
@@ -415,11 +417,12 @@ function makeMap(canvasId, tipId, opts){
     canvas.height = r.height * devicePixelRatio;
     M.draw();
   };
-  M.toScreen = p => {
+  M.toScreen = p => M.projXY(opts.px(p), opts.py(p));
+  M.projXY = (X, Y) => {           // raw layout coords -> screen (for cluster centroids)
     const v = M.view, w = canvas.width, h = canvas.height;
     const s = Math.min(w, h) * v.k;
-    return [w/2 + (opts.px(p) - v.cx) * s + v.x * devicePixelRatio,
-            h/2 + (opts.py(p) - v.cy) * s + v.y * devicePixelRatio];
+    return [w/2 + (X - v.cx) * s + v.x * devicePixelRatio,
+            h/2 + (Y - v.cy) * s + v.y * devicePixelRatio];
   };
   M.draw = () => { if (M.view) opts.draw(ctx, M); };
   M.pick = (cx_, cy_) => {
@@ -487,6 +490,37 @@ function makeMap(canvasId, tipId, opts){
 const dimC = () => getComputedStyle(document.documentElement)
   .getPropertyValue("--rule").trim() || "#999";
 
+// shared: draw zoom-appropriate cluster summary labels, biggest-first with
+// greedy collision avoidance. `data` = {levels:[{clusters:[{t,x,y,n}]}]}
+function drawClusterLabels(ctx, M, data){
+  if (!data) return;
+  const ratio = M.fitK ? M.view.k / M.fitK : 1;
+  const lvl = ratio < 1.8 ? 0 : ratio < 4 ? 1 : ratio < 9 ? 2 : -1;
+  if (lvl < 0 || !data.levels[lvl]) return -1;
+  const css = getComputedStyle(document.documentElement);
+  const ink = css.getPropertyValue("--ink").trim();
+  const bg = css.getPropertyValue("--bg").trim();
+  const w = M.canvas.width, h = M.canvas.height, drawn = [];
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineJoin = "round";
+  for (const c of data.levels[lvl].clusters){    // already size-desc
+    const [x, y] = M.projXY(c.x, c.y);
+    if (x < 0 || y < 0 || x > w || y > h) continue;
+    const fs = (13 + Math.min(9, 3 * Math.log10(c.n))) * devicePixelRatio;
+    ctx.font = `600 ${fs}px "Iowan Old Style", Georgia, serif`;
+    const tw = ctx.measureText(c.t).width, th = fs * 1.25;
+    const box = [x - tw/2 - 3, y - th/2, x + tw/2 + 3, y + th/2];
+    if (drawn.some(d => box[0] < d[2] && box[2] > d[0] && box[1] < d[3] && box[3] > d[1]))
+      continue;
+    drawn.push(box);
+    ctx.globalAlpha = 0.96;
+    ctx.lineWidth = 4 * devicePixelRatio; ctx.strokeStyle = bg;
+    ctx.strokeText(c.t, x, y);
+    ctx.fillStyle = ink; ctx.fillText(c.t, x, y);
+  }
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.globalAlpha = 1;
+  return lvl;
+}
+
 const CC = makeMap("cc", "tc", {
   pts: () => terms, px: p => p.x, py: p => p.y,
   skip: p => filterActive() && termMatches && !termMatches.has(p),
@@ -504,6 +538,7 @@ const CC = makeMap("cc", "tc", {
     const ratio = M.fitK ? M.view.k / M.fitK : 1;
     // pick cluster-label scale by zoom (coarse -> fine -> individual terms)
     const lvl = ratio < 1.8 ? 0 : ratio < 4 ? 1 : ratio < 9 ? 2 : -1;
+    void ink; void bg;
     const visible = [];
     for (const p of terms){
       const [x, y] = M.toScreen(p);
@@ -527,30 +562,7 @@ const CC = makeMap("cc", "tc", {
         ctx.fillText(p.t, x + r + 3 * devicePixelRatio, y + 3.5 * devicePixelRatio);
       }
     }
-    // cluster summary labels — larger, haloed; drawn biggest-first with greedy
-    // collision avoidance so dense regions thin out instead of overprinting
-    if (lvl >= 0 && clusters && clusters.levels[lvl] && !termMatches){
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.lineJoin = "round";
-      const drawn = [];
-      for (const c of clusters.levels[lvl].clusters){   // already sorted by size desc
-        const [x, y] = M.toScreen(c);
-        if (x < 0 || y < 0 || x > w || y > h) continue;
-        const fs = (13 + Math.min(9, 3 * Math.log10(c.n))) * devicePixelRatio;
-        ctx.font = `600 ${fs}px "Iowan Old Style", Georgia, serif`;
-        const tw = ctx.measureText(c.t).width, th = fs * 1.25;
-        const box = [x - tw/2 - 3, y - th/2, x + tw/2 + 3, y + th/2];
-        if (drawn.some(d => box[0] < d[2] && box[2] > d[0] &&
-                            box[1] < d[3] && box[3] > d[1]))
-          continue;
-        drawn.push(box);
-        ctx.globalAlpha = 0.96;
-        ctx.lineWidth = 4 * devicePixelRatio; ctx.strokeStyle = bg;
-        ctx.strokeText(c.t, x, y);
-        ctx.fillStyle = ink; ctx.fillText(c.t, x, y);
-      }
-      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
-    }
+    if (!termMatches) drawClusterLabels(ctx, M, clusters);   // concept-cluster labels
     ctx.globalAlpha = 1;
   },
 });
@@ -591,6 +603,7 @@ const CD = makeMap("cd", "td", {
         ctx.beginPath(); ctx.arc(x, y, r + 4.5 * devicePixelRatio, 0, 7); ctx.stroke();
       }
     }
+    if (!docMatches) drawClusterLabels(ctx, M, textClusters);   // text-cluster labels
     ctx.globalAlpha = 1;
   },
 });
