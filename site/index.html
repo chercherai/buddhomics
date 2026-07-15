@@ -16,85 +16,97 @@
 *{box-sizing:border-box}
 body{margin:0; background:var(--bg); color:var(--ink);
   font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
-header{padding:1.2rem 1.5rem .4rem; display:flex; align-items:baseline; gap:1.2rem; flex-wrap:wrap;}
-h1{font-size:1.35rem; margin:0; font-weight:600;}
+header{padding:1rem 1.2rem .3rem; display:flex; align-items:baseline; gap:1.1rem; flex-wrap:wrap;}
+h1{font-size:1.3rem; margin:0; font-weight:600;}
 h1 a{color:inherit; text-decoration:none}
 .nav{font-family:system-ui,sans-serif; font-size:.8rem;}
 .nav a{color:var(--muted); text-decoration:none; margin-right:1rem;}
 .nav a:hover,.nav a[aria-current]{color:var(--accent);}
-.sub{color:var(--muted); font-size:.9rem; margin:.2rem 0 0; max-width:52rem;}
+.sub{color:var(--muted); font-size:.85rem; margin:.15rem 0 0; max-width:60rem;}
 #controls{display:flex; gap:.8rem; align-items:center; flex-wrap:wrap;
-  margin:1rem 1.5rem 0; font-family:system-ui,sans-serif; font-size:.8rem;}
-.toggle{display:inline-flex; border:1px solid var(--rule); border-radius:6px; overflow:hidden;}
-.toggle button{border:0; background:transparent; color:var(--muted); padding:.4rem .8rem;
-  font:inherit; cursor:pointer;}
-.toggle button[aria-pressed="true"]{background:var(--card); color:var(--accent); font-weight:600;}
+  margin:.6rem 1.2rem 0; font-family:system-ui,sans-serif; font-size:.8rem;}
 #q{border:1px solid var(--rule); border-radius:6px; background:var(--card); color:var(--ink);
-  padding:.4rem .7rem; font:inherit; width:16rem;}
+  padding:.35rem .65rem; font:inherit; width:15rem;}
 #q:focus{outline:1.5px solid var(--accent);}
-#qcount{color:var(--muted);}
-#wrap{display:flex; gap:.8rem; margin:.6rem 1.5rem; align-items:stretch;}
-#taxo{width:15.5rem; flex:none; height:74vh; overflow-y:auto; border:1px solid var(--rule);
-  border-radius:6px; padding:.6rem .5rem 1.2rem; font-family:system-ui,sans-serif;
-  font-size:.8rem;}
-#taxo details{margin:0 0 .15rem;}
-#taxo summary{cursor:pointer; display:flex; align-items:center; gap:.4rem;
-  padding:.28rem .4rem; border-radius:5px; list-style:none;}
+#status{color:var(--muted); min-height:1.1em;}
+#status b{color:var(--accent);}
+#status button{border:0; background:transparent; color:var(--muted); cursor:pointer;
+  font:inherit; text-decoration:underline; padding:0 0 0 .5rem;}
+#wrap{display:flex; gap:.6rem; margin:.5rem 1.2rem; align-items:stretch; height:76vh;}
+#taxo{width:13rem; flex:none; overflow-y:auto; border:1px solid var(--rule);
+  border-radius:6px; padding:.5rem .4rem 1rem; font-family:system-ui,sans-serif;
+  font-size:.76rem;}
+#taxo details{margin:0 0 .12rem;}
+#taxo summary{cursor:pointer; display:flex; align-items:center; gap:.35rem;
+  padding:.24rem .35rem; border-radius:5px; list-style:none;}
 #taxo summary::-webkit-details-marker{display:none;}
 #taxo summary::before{content:"▸"; font-size:.7em; color:var(--muted);
   transition:transform .12s;}
 #taxo details[open] > summary::before{transform:rotate(90deg);}
-#taxo .lvl1 > summary{font-weight:700; letter-spacing:.04em;}
-#taxo .lvl2{margin-left:.7rem;}
-#taxo .lvl2 > summary{font-weight:600; color:var(--ink);}
-#taxo .term{display:flex; align-items:center; gap:.4rem; width:100%;
+#taxo .lvl1 > summary{font-weight:700; letter-spacing:.03em;}
+#taxo .lvl2{margin-left:.55rem;}
+#taxo .lvl2 > summary{font-weight:600;}
+#taxo .term{display:flex; align-items:center; gap:.35rem; width:100%;
   border:0; background:transparent; color:var(--ink); font:inherit; text-align:left;
-  padding:.22rem .4rem .22rem 1.9rem; border-radius:5px; cursor:pointer;}
+  padding:.2rem .35rem .2rem 1.6rem; border-radius:5px; cursor:pointer;}
 #taxo .term:hover{background:var(--card);}
-#taxo .count{margin-left:auto; color:var(--muted); font-size:.7rem;
+#taxo .count{margin-left:auto; color:var(--muted); font-size:.68rem;
   font-variant-numeric:tabular-nums; border:0; background:transparent; font-family:inherit;
-  cursor:pointer; padding:.05rem .35rem; border-radius:8px;}
+  cursor:pointer; padding:.05rem .3rem; border-radius:8px;}
 #taxo summary .count:hover{background:var(--card); color:var(--accent);}
 #taxo .active{background:var(--card); color:var(--accent); font-weight:600;}
-#taxo .active .count{color:var(--accent);}
-#mapbox{position:relative; flex:1; min-width:0;}
-canvas{width:100%; height:74vh; display:block; border:1px solid var(--rule);
+.pane{position:relative; flex:1.15; min-width:0;}
+.pane .pl{position:absolute; top:.45rem; left:.6rem; z-index:2;
+  font-family:system-ui,sans-serif; font-size:.65rem; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); pointer-events:none;}
+canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
   border-radius:6px; background:var(--bg); cursor:grab; touch-action:none;}
-#reader{width:46%; max-width:46rem; height:74vh; border:1px solid var(--rule);
-  border-radius:6px; background:var(--bg); display:flex; flex-direction:column;}
-#reader[hidden]{display:none;}
-#rhead{display:flex; align-items:baseline; gap:.7rem; flex-wrap:wrap;
-  padding:.8rem 1.1rem .6rem; border-bottom:1px solid var(--rule);
-  font-family:system-ui,sans-serif;}
-#rhead .ruid{font-weight:700; font-size:1rem;}
-#rhead .rmeta{color:var(--muted); font-size:.75rem;}
-#rhead a{color:var(--accent); font-size:.75rem; text-decoration:none;}
-#rclose{margin-left:auto; border:0; background:transparent; color:var(--muted);
-  font:inherit; font-size:1.05rem; cursor:pointer; padding:0 .2rem;}
-#rclose:hover{color:var(--accent);}
-#rbody{overflow-y:auto; padding: .9rem 1.2rem 2rem; line-height:1.55;}
-#rbody h3{font-family:system-ui,sans-serif; font-size:.72rem; letter-spacing:.09em;
-  text-transform:uppercase; color:var(--muted); margin:1.1rem 0 .4rem;}
-#rbody .seg{margin:0 0 .65rem;}
-#rbody .p{color:var(--accent); font-style:italic; margin:0; font-size:.92rem;}
-#rbody .e{margin:.1rem 0 0;}
-#rbody .note{color:var(--muted); font-family:system-ui,sans-serif; font-size:.78rem;
-  background:var(--card); border-radius:6px; padding:.5rem .7rem; margin:0 0 1rem;}
-#tip{position:absolute; pointer-events:none; display:none; max-width:16rem;
+.tip{position:absolute; pointer-events:none; display:none; max-width:15rem;
   background:var(--card); border:1px solid var(--rule); border-radius:6px;
-  padding:.55rem .7rem; font-family:system-ui,sans-serif; font-size:.78rem;
+  padding:.5rem .65rem; font-family:system-ui,sans-serif; font-size:.75rem;
   line-height:1.4; box-shadow:0 2px 10px rgba(0,0,0,.12); z-index:3;}
-#tip .uid{font-weight:700;}
-#tip .terms{color:var(--accent); font-style:italic;}
-#tip .meta{color:var(--muted);}
-#legend{display:flex; flex-wrap:wrap; gap:.35rem .9rem; padding:.6rem 1.5rem 1.4rem;
-  font-family:system-ui,sans-serif; font-size:.78rem;}
-.key{display:flex; align-items:center; gap:.35rem; cursor:pointer; user-select:none;
-  color:var(--ink); opacity:1; transition:opacity .15s;}
+.tip .hd{font-weight:700;}
+.tip .terms{color:var(--accent); font-style:italic;}
+.tip .meta{color:var(--muted);}
+#right{width:26%; max-width:38rem; min-width:19rem; flex:none; display:flex;
+  flex-direction:column; gap:.6rem;}
+#dict{border:1px solid var(--rule); border-radius:6px; padding:.6rem .8rem;
+  max-height:11rem; overflow-y:auto; font-size:.85rem; line-height:1.45;}
+#dict .hw{font-weight:700; font-style:italic; font-size:1rem;}
+#dict .via{color:var(--muted); font-family:system-ui,sans-serif; font-size:.72rem;}
+#dict .g{color:var(--muted); font-style:italic; font-family:system-ui,sans-serif;
+  font-size:.75rem;}
+#dict .sense{margin:.25rem 0 0;}
+#dict .xr{font-family:system-ui,sans-serif; font-size:.75rem; color:var(--muted);}
+#dict .xr a{color:var(--accent); cursor:pointer; font-style:italic;}
+#dict .empty{color:var(--muted); font-family:system-ui,sans-serif; font-size:.78rem; margin:.1rem 0;}
+#reader{flex:1; min-height:0; border:1px solid var(--rule); border-radius:6px;
+  background:var(--bg); display:flex; flex-direction:column;}
+#rhead{display:flex; align-items:baseline; gap:.55rem; flex-wrap:wrap;
+  padding:.6rem .9rem .45rem; border-bottom:1px solid var(--rule);
+  font-family:system-ui,sans-serif;}
+#rhead .ruid{font-weight:700;}
+#rhead .rmeta{color:var(--muted); font-size:.7rem;}
+#rhead a{color:var(--accent); font-size:.7rem; text-decoration:none;}
+#rbody{overflow-y:auto; padding:.7rem .9rem 2rem; line-height:1.5; font-size:.9rem; flex:1;}
+#rbody h3{font-family:system-ui,sans-serif; font-size:.66rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muted); margin:.9rem 0 .3rem;}
+#rbody .seg{margin:0 0 .55rem;}
+#rbody .p{color:var(--accent); font-style:italic; margin:0; font-size:.85rem;}
+#rbody .e{margin:.08rem 0 0;}
+#rbody .note{color:var(--muted); font-family:system-ui,sans-serif; font-size:.74rem;
+  background:var(--card); border-radius:6px; padding:.45rem .6rem; margin:0 0 .8rem;}
+#rbody .w{cursor:pointer; border-radius:2px;}
+#rbody .w:hover{background:var(--card); outline:2px solid var(--card);}
+#rbody .w.ct{text-decoration:underline dotted; text-underline-offset:2px;}
+#rbody .w.lit{background:var(--card); outline:2px solid var(--card);}
+#legend{display:flex; flex-wrap:wrap; gap:.3rem .8rem; padding:.5rem 1.2rem 1rem;
+  font-family:system-ui,sans-serif; font-size:.74rem;}
+.key{display:flex; align-items:center; gap:.3rem; cursor:pointer; user-select:none;}
 .key.off{opacity:.3;}
-.key .dot{width:10px; height:10px; border-radius:50%;}
-footer{color:var(--muted); font-family:system-ui,sans-serif; font-size:.75rem;
-  padding:0 1.5rem 2rem; max-width:52rem;}
+.key .dot{width:9px; height:9px; border-radius:50%;}
+footer{color:var(--muted); font-family:system-ui,sans-serif; font-size:.72rem;
+  padding:0 1.2rem 1.6rem; max-width:64rem;}
 footer a{color:var(--accent)}
 </style>
 </head>
@@ -103,116 +115,382 @@ footer a{color:var(--accent)}
   <h1><a href="./">buddhomics</a></h1>
   <nav class="nav">
     <a href="./" aria-current="page">map</a>
-    <a href="explore.html">explore</a>
     <a href="about.html">about</a>
   </nav>
-  <p class="sub">Every text of the Pali canon, placed by what it talks about.
-  Point size tracks text length. Drag to pan, scroll to zoom, hover for a text's
-  strongest terms, click a point to read it here.</p>
+  <p class="sub">The Pali canon as one instrument: browse by topic, click a concept to
+  see its texts, click a text to read it, click any Pali word to look it up and place
+  it on the concept map.</p>
 </header>
 <div id="controls">
-  <span class="toggle" role="group" aria-label="layout">
-    <button id="bt-umap" aria-pressed="true">UMAP</button>
-    <button id="bt-tsne" aria-pressed="false">t-SNE</button>
-  </span>
   <input id="q" type="search" placeholder="search uid, collection, or Pali term…"
     autocomplete="off" spellcheck="false">
-  <span id="qcount"></span>
+  <span id="status"></span>
 </div>
 <div id="wrap">
   <nav id="taxo" aria-label="browse by topic"></nav>
-  <div id="mapbox">
-    <canvas id="c"></canvas>
-    <div id="tip"></div>
-  </div>
-  <aside id="reader" hidden aria-label="reading panel">
-    <div id="rhead">
-      <span class="ruid"></span>
-      <span class="rmeta"></span>
-      <a class="rsc" target="_blank" rel="noopener">SuttaCentral ↗</a>
-      <button id="rclose" title="close (Esc)">✕</button>
+  <div class="pane"><span class="pl">concepts</span>
+    <canvas id="cc"></canvas><div class="tip" id="tc"></div></div>
+  <div class="pane"><span class="pl">texts</span>
+    <canvas id="cd"></canvas><div class="tip" id="td"></div></div>
+  <div id="right">
+    <div id="dict"><p class="empty">Dictionary — click a concept on the map or any
+      Pali word in the reader. Definitions from the New Concise Pali English
+      Dictionary via SuttaCentral.</p></div>
+    <div id="reader">
+      <div id="rhead">
+        <span class="ruid">reader</span><span class="rmeta">click a text to read it here</span>
+        <a class="rsc" target="_blank" rel="noopener" hidden>SuttaCentral ↗</a>
+      </div>
+      <div id="rbody"><p class="note">Nothing open yet. Click a point on the texts map.</p></div>
     </div>
-    <div id="rbody"></div>
-  </aside>
+  </div>
 </div>
 <div id="legend"></div>
 <footer>
   Substrate: <a href="https://github.com/suttacentral/bilara-data">bilara-data</a>
-  (Mahāsaṅgīti Pali). 6,959 texts with ≥200 characters of Pali. Layouts are UMAP and
-  t-SNE over 100-dim SVD of a 40k-term TF-IDF matrix; proximity means lexical
-  similarity, and cluster shapes are suggestive, not proof.
+  (Mahāsaṅgīti Pali; English by Sujato/Brahmali where available). Both maps are t-SNE
+  over one 100-dim SVD of a 40k-term TF-IDF matrix — texts as rows, terms as columns —
+  linked by a full-text term–document incidence matrix. Dictionary: NCPED via
+  <a href="https://github.com/suttacentral/sc-data">sc-data</a>. Esc clears any selection.
 </footer>
 <script>
-const COLORS = {
+const DCOLORS = {
   dn:"#3D5A80", mn:"#5C7FA6", sn:"#7FA0C4", an:"#A3BEDA",
   kn:"#8E2A18", vinaya:"#3D6B4F", abhidhamma:"#9A7B2F"
 };
 const NAMES = {
   dn:"Dīgha Nikāya", mn:"Majjhima Nikāya", sn:"Saṁyutta Nikāya",
-  an:"Aṅguttara Nikāya", kn:"Khuddaka Nikāya", vinaya:"Vinaya",
-  abhidhamma:"Abhidhamma"
+  an:"Aṅguttara Nikāya", kn:"Khuddaka Nikāya", vinaya:"Vinaya", abhidhamma:"Abhidhamma"
+};
+const GCOLORS = {
+  "aggregates & elements": "#3D5A80", "dependent origination": "#8E2A18",
+  "path & wings": "#3D6B4F", "meditation": "#7A4A9E", "four truths": "#B5541C",
+  "divine abidings": "#C48A00", "ethics & training": "#2E7D82", "liberation": "#A83267",
 };
 const groupOf = p => p.basket === "vinaya" ? "vinaya"
   : p.basket === "abhidhamma" ? "abhidhamma" : p.nikaya;
 
-const canvas = document.getElementById("c"), tip = document.getElementById("tip");
-const ctx = canvas.getContext("2d");
-let pts = [], hidden = new Set(), hover = null;
-let layout = "umap";              // "umap" | "tsne"
-let views = {};                    // per-layout view state
-let matches = null;                // Set of matching points, or null (no query)
+let terms = [], docs = [], bits = null, BPR = 0, dict = null;
+let termIdx = new Map();          // term string -> index
+let termMatches = null, docMatches = null;   // Sets of point objects
+let hiddenGroups = new Set(), taxoActive = null;
+const statusEl = document.getElementById("status");
+const qEl = document.getElementById("q");
 
-const px = p => layout === "umap" ? p.x : p.tx;
-const py = p => layout === "umap" ? p.y : p.ty;
-const radius = p => Math.min(7, 1.1 + 0.16 * Math.sqrt(p.n));
+Promise.all([
+  fetch("concepts.json", {cache:"no-cache"}).then(r => r.json()),
+  fetch("map.json", {cache:"no-cache"}).then(r => r.json()),
+  fetch("concept_bits.bin", {cache:"no-cache"}).then(r => r.arrayBuffer()),
+  fetch("taxonomy.json", {cache:"no-cache"}).then(r => r.json()),
+]).then(([c, m, b, tax]) => {
+  terms = c; docs = m;
+  bits = new Uint8Array(b);
+  BPR = Math.ceil(docs.length / 8);
+  terms.forEach((p, i) => termIdx.set(p.t, i));
+  CC.fit(); CD.fit(); CC.resize(); CD.resize();
+  buildLegend(); buildTaxo(tax);
+});
+fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => { dict = d; });
 
-function fitView(){
-  const xs = pts.map(px), ys = pts.map(py);
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  const span = Math.max(Math.max(...xs) - Math.min(...xs),
-                        Math.max(...ys) - Math.min(...ys));
-  return {cx, cy, k: 0.9 / span, x: 0, y: 0};
+const hasBit = (t, j) => bits[t * BPR + (j >> 3)] & (1 << (j & 7));
+function docsOfTerm(t){
+  const s = new Set();
+  for (let j = 0; j < docs.length; j++) if (hasBit(t, j)) s.add(docs[j]);
+  return s;
 }
-const view = () => views[layout];
+function termsOfDoc(j){
+  const s = new Set();
+  for (let t = 0; t < terms.length; t++) if (hasBit(t, j)) s.add(terms[t]);
+  return s;
+}
 
-fetch("map.json", {cache: "no-cache"}).then(r => r.json()).then(data => {
-  pts = data;
-  views.umap = fitView();
-  layout = "tsne"; views.tsne = pts[0].tx !== undefined ? fitView() : null;
-  layout = "umap";
-  if (!views.tsne) document.getElementById("bt-tsne").disabled = true;
-  buildLegend();
-  resize();
-  fetch("taxonomy.json", {cache: "no-cache"}).then(r => r.json()).then(buildTaxo).catch(() => {});
+function setStatus(html){
+  statusEl.innerHTML = html ? html + '<button onclick="clearSel()">clear</button>' : "";
+}
+function clearSel(){
+  termMatches = null; docMatches = null;
+  if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
+  qEl.value = "";
+  setStatus(""); CC.draw(); CD.draw(); relitReader();
+}
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && document.activeElement !== qEl) clearSel();
 });
 
-// ---- taxonomy browser ----
-let taxoActive = null;
+// ---- selection actions ----
+function selectTerm(i){
+  const p = terms[i];
+  termMatches = new Set([p]);
+  docMatches = docsOfTerm(i);
+  if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
+  setStatus(`<b>${p.t}</b> appears in <b>${docMatches.size}</b> texts`);
+  showDict(p.t);
+  CC.draw(); CD.draw(); relitReader();
+}
+function selectDoc(p){
+  const j = docs.indexOf(p);
+  docMatches = new Set([p]);
+  termMatches = termsOfDoc(j);
+  if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
+  setStatus(`<b>${p.uid}</b> touches <b>${termMatches.size}</b> concept terms`);
+  openReader(p);
+  CC.draw(); CD.draw();
+}
+function wordClick(w){
+  showDict(w);
+  const i = termIdx.get(w);
+  if (i !== undefined){
+    const p = terms[i];
+    termMatches = new Set([p]);
+    docMatches = docsOfTerm(i);
+    setStatus(`<b>${p.t}</b> appears in <b>${docMatches.size}</b> texts`);
+    CC.draw(); CD.draw(); relitReader();
+  }
+}
+
+// ---- dictionary ----
+const dictEl = document.getElementById("dict");
+function lookupCandidates(w){
+  const c = [w];
+  if (w.endsWith("ṁ")) c.push(w.slice(0, -1), w.slice(0, -1) + "a");
+  for (const [suf, rep] of [["ā","a"],["o","a"],["aṁ","a"],["ena","a"],["āya","ā"],
+    ["assa","a"],["ānaṁ","a"],["asmiṁ","a"],["amhi","a"],["esu","a"],["ehi","a"],
+    ["āni","a"],["ino","ī"],["issa","i"],["īsu","ī"],["ūsu","ū"],["uno","u"],
+    ["ussa","u"],["āyo","ā"],["iyā","ī"],["iyo","ī"]]){
+    if (w.endsWith(suf)) c.push(w.slice(0, -suf.length) + rep);
+  }
+  for (let k = 1; k <= 3 && w.length - k >= 4; k++){
+    c.push(w.slice(0, w.length - k), w.slice(0, w.length - k) + "a");
+  }
+  return c;
+}
+function showDict(word){
+  const w = String(word).toLowerCase();
+  if (!dict){ dictEl.innerHTML = '<p class="empty">dictionary still loading…</p>'; return; }
+  let hw = null;
+  for (const cand of lookupCandidates(w)){
+    if (dict[cand]){ hw = cand; break; }
+  }
+  if (!hw){
+    dictEl.innerHTML = `<span class="hw">${esc(w)}</span>
+      <p class="empty">not found in NCPED (inflected form? try a shorter stem)</p>`;
+    return;
+  }
+  const senses = dict[hw].map(s => `<div class="sense">
+    ${s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}
+    ${s.x ? `<div class="xr">see: ${s.x.map(x =>
+      `<a onclick="showDict('${esc(x)}')">${esc(x)}</a>`).join(", ")}</div>` : ""}
+  </div>`).join("");
+  dictEl.innerHTML = `<span class="hw">${esc(hw)}</span>
+    ${hw !== w ? `<span class="via">← ${esc(w)}</span>` : ""}${senses}`;
+}
+
+// ---- shared canvas engine ----
+function makeMap(canvasId, tipId, opts){
+  const canvas = document.getElementById(canvasId);
+  const tip = document.getElementById(tipId);
+  const ctx = canvas.getContext("2d");
+  const M = { canvas, view: null, hover: null };
+  M.fit = () => {
+    const ps = opts.pts();
+    const xs = ps.map(opts.px), ys = ps.map(opts.py);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const span = Math.max(Math.max(...xs) - Math.min(...xs),
+                          Math.max(...ys) - Math.min(...ys));
+    M.view = {cx, cy, k: 0.9 / span, x: 0, y: 0};
+  };
+  M.resize = () => {
+    const r = canvas.getBoundingClientRect();
+    canvas.width = r.width * devicePixelRatio;
+    canvas.height = r.height * devicePixelRatio;
+    M.draw();
+  };
+  M.toScreen = p => {
+    const v = M.view, w = canvas.width, h = canvas.height;
+    const s = Math.min(w, h) * v.k;
+    return [w/2 + (opts.px(p) - v.cx) * s + v.x * devicePixelRatio,
+            h/2 + (opts.py(p) - v.cy) * s + v.y * devicePixelRatio];
+  };
+  M.draw = () => { if (M.view) opts.draw(ctx, M); };
+  M.pick = (cx_, cy_) => {
+    const r = canvas.getBoundingClientRect();
+    const mx = (cx_ - r.left) * devicePixelRatio, my = (cy_ - r.top) * devicePixelRatio;
+    let best = null, bd = 11 * devicePixelRatio;
+    for (const p of opts.pts()){
+      if (opts.skip && opts.skip(p)) continue;
+      const [x, y] = M.toScreen(p);
+      const d = Math.hypot(x - mx, y - my);
+      if (d < bd){ bd = d; best = p; }
+    }
+    return best;
+  };
+  let drag = null, moved = false;
+  canvas.addEventListener("pointerdown", e => {
+    drag = {x: e.clientX - M.view.x, y: e.clientY - M.view.y}; moved = false;
+    canvas.setPointerCapture(e.pointerId); canvas.style.cursor = "grabbing";
+  });
+  canvas.addEventListener("pointerup", () => { drag = null; canvas.style.cursor = "grab"; });
+  canvas.addEventListener("pointermove", e => {
+    if (drag){
+      const nx = e.clientX - drag.x, ny = e.clientY - drag.y;
+      if (Math.abs(nx - M.view.x) + Math.abs(ny - M.view.y) > 2) moved = true;
+      M.view.x = nx; M.view.y = ny; M.draw(); return;
+    }
+    const best = M.pick(e.clientX, e.clientY);
+    if (best !== M.hover){ M.hover = best; M.draw(); }
+    const r = canvas.getBoundingClientRect();
+    if (best){
+      tip.style.display = "block";
+      tip.style.left = (e.clientX - r.left + 14) + "px";
+      tip.style.top = (e.clientY - r.top + 14) + "px";
+      tip.innerHTML = opts.tipHtml(best);
+    } else tip.style.display = "none";
+  });
+  canvas.addEventListener("pointerleave", () => {
+    tip.style.display = "none"; M.hover = null; M.draw();
+  });
+  canvas.addEventListener("wheel", e => {
+    e.preventDefault();
+    const r = canvas.getBoundingClientRect();
+    const f = Math.exp(-e.deltaY * 0.0015);
+    const mx = e.clientX - r.left - r.width / 2;
+    const my = e.clientY - r.top - r.height / 2;
+    M.view.k *= f;
+    M.view.x = (1 - f) * mx + f * M.view.x;
+    M.view.y = (1 - f) * my + f * M.view.y;
+    M.draw();
+  }, {passive: false});
+  canvas.addEventListener("click", e => {
+    if (moved) return;
+    const p = M.hover || M.pick(e.clientX, e.clientY);
+    if (p) opts.onClick(p);
+  });
+  addEventListener("resize", M.resize);
+  return M;
+}
+const dimC = () => getComputedStyle(document.documentElement)
+  .getPropertyValue("--rule").trim() || "#999";
+
+const CC = makeMap("cc", "tc", {
+  pts: () => terms, px: p => p.x, py: p => p.y,
+  tipHtml: p => `<div class="hd" style="font-style:italic">${p.t}</div>
+    <div class="meta">in ${p.df} texts${p.g ? " · " + p.g : ""}</div>`,
+  onClick: p => selectTerm(termIdx.get(p.t)),
+  draw: (ctx, M) => {
+    const w = M.canvas.width, h = M.canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const grey = dimC();
+    const visible = [];
+    for (const p of terms){
+      const [x, y] = M.toScreen(p);
+      if (x < -12 || y < -12 || x > w + 12 || y > h + 12) continue;
+      visible.push([p, x, y]);
+    }
+    const nMatch = termMatches ? visible.filter(([p]) => termMatches.has(p)).length : 0;
+    for (const [p, x, y] of visible){
+      const dim = termMatches && !termMatches.has(p);
+      const r = Math.min(6, 0.7 + 0.85 * Math.log10(p.df)) * devicePixelRatio
+        * (M.hover === p ? 1.6 : 1);
+      ctx.globalAlpha = dim ? 0.45 : (p.g ? 0.95 : 0.5);
+      ctx.fillStyle = dim ? grey : (p.g ? GCOLORS[p.g] : "#9a978f");
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+      if (!dim && (visible.length <= 200 || M.hover === p ||
+          (termMatches && termMatches.has(p) && nMatch <= 250))){
+        ctx.globalAlpha = 0.92;
+        ctx.font = `italic ${Math.max(10, 8 + 2*Math.log10(p.df)) * devicePixelRatio}px Georgia, serif`;
+        ctx.fillText(p.t, x + r + 3 * devicePixelRatio, y + 3 * devicePixelRatio);
+      }
+    }
+    ctx.globalAlpha = 1;
+  },
+});
+
+const CD = makeMap("cd", "td", {
+  pts: () => docs, px: p => p.tx, py: p => p.ty,
+  skip: p => hiddenGroups.has(groupOf(p)),
+  tipHtml: p => `<div class="hd">${p.uid}</div>
+    <div class="meta">${p.basket} · ${p.subpath || p.nikaya} · ${p.n} segments</div>
+    <div class="terms">${p.terms.slice(0,5).join(" · ")}</div>
+    <div class="meta">click to read</div>`,
+  onClick: selectDoc,
+  draw: (ctx, M) => {
+    const w = M.canvas.width, h = M.canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const grey = dimC();
+    for (const p of docs){
+      if (hiddenGroups.has(groupOf(p))) continue;
+      const [x, y] = M.toScreen(p);
+      if (x < -12 || y < -12 || x > w + 12 || y > h + 12) continue;
+      const dim = docMatches && !docMatches.has(p);
+      ctx.globalAlpha = dim ? 0.5 : (M.hover === p ? 1 : 0.85);
+      ctx.fillStyle = dim ? grey : (DCOLORS[groupOf(p)] || "#888");
+      const r = Math.min(6.5, 1 + 0.15 * Math.sqrt(p.n)) * devicePixelRatio
+        * (M.hover === p ? 1.6 : 1);
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+      if (docMatches && docMatches.has(p) && docMatches.size <= 400){
+        ctx.globalAlpha = 0.9; ctx.strokeStyle = DCOLORS[groupOf(p)] || "#888";
+        ctx.lineWidth = devicePixelRatio;
+        ctx.beginPath(); ctx.arc(x, y, r + 2.5 * devicePixelRatio, 0, 7); ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
+  },
+});
+
+// ---- search ----
+qEl.addEventListener("input", () => {
+  if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
+  const q = qEl.value.trim().toLowerCase();
+  if (!q){ docMatches = null; termMatches = null; setStatus(""); CC.draw(); CD.draw(); return; }
+  docMatches = new Set(docs.filter(p =>
+    p.uid.toLowerCase().includes(q) ||
+    (p.subpath || "").toLowerCase().includes(q) ||
+    p.terms.some(t => t.includes(q))));
+  termMatches = new Set(terms.filter(p => p.t.includes(q)));
+  setStatus(`<b>${docMatches.size}</b> texts · <b>${termMatches.size}</b> terms match “${esc(q)}”`);
+  CC.draw(); CD.draw();
+});
+qEl.addEventListener("keydown", e => {
+  if (e.key === "Escape"){ qEl.value = ""; qEl.dispatchEvent(new Event("input")); qEl.blur(); }
+});
+
+// ---- legend ----
+function buildLegend(){
+  const el = document.getElementById("legend");
+  for (const g of Object.keys(DCOLORS)){
+    const n = docs.filter(p => groupOf(p) === g).length;
+    const k = document.createElement("span");
+    k.className = "key";
+    k.innerHTML = `<span class="dot" style="background:${DCOLORS[g]}"></span>${NAMES[g]} · ${n}`;
+    k.onclick = () => { hiddenGroups.has(g) ? hiddenGroups.delete(g) : hiddenGroups.add(g);
+      k.classList.toggle("off"); CD.draw(); };
+    el.appendChild(k);
+  }
+}
+
+// ---- taxonomy ----
 function setFilter(set, el, label){
   if (taxoActive){ taxoActive.classList.remove("active"); }
   taxoActive = null;
   if (el && set){
     taxoActive = el; el.classList.add("active");
-    matches = set;
+    docMatches = set; termMatches = null;
     qEl.value = "";
-    qCount.textContent = `${set.size} texts · ${label}`;
-  } else {
-    matches = null;
-    qCount.textContent = "";
-  }
-  draw();
+    setStatus(`<b>${set.size}</b> texts · ${esc(label)}`);
+  } else { docMatches = null; termMatches = null; setStatus(""); }
+  CC.draw(); CD.draw();
 }
 function buildTaxo(tax){
   const nav = document.getElementById("taxo");
   const union = arrs => {
     const s = new Set();
-    for (const a of arrs) for (const i of a) s.add(pts[i]);
+    for (const a of arrs) for (const i of a) s.add(docs[i]);
     return s;
   };
   const chip = (n, get, label) => {
     const b = document.createElement("button");
-    b.className = "count"; b.textContent = n; b.title = `show ${n} texts`;
+    b.className = "count"; b.textContent = n;
     b.onclick = e => {
       e.preventDefault(); e.stopPropagation();
       if (taxoActive === b.parentElement){ setFilter(null); return; }
@@ -236,8 +514,7 @@ function buildTaxo(tax){
       d2.append(s2);
       for (const term of sub.terms){
         const b = document.createElement("button");
-        b.className = "term";
-        b.append(term.t);
+        b.className = "term"; b.append(term.t);
         const c = document.createElement("span");
         c.className = "count"; c.textContent = term.docs.length;
         b.append(c);
@@ -253,169 +530,40 @@ function buildTaxo(tax){
   }
 }
 
-for (const [id, name] of [["bt-umap","umap"], ["bt-tsne","tsne"]]){
-  document.getElementById(id).onclick = () => {
-    if (!views[name]) return;
-    layout = name;
-    document.getElementById("bt-umap").setAttribute("aria-pressed", name === "umap");
-    document.getElementById("bt-tsne").setAttribute("aria-pressed", name === "tsne");
-    draw();
-  };
-}
-
-const qEl = document.getElementById("q"), qCount = document.getElementById("qcount");
-qEl.addEventListener("input", () => {
-  if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
-  const q = qEl.value.trim().toLowerCase();
-  if (!q){ matches = null; qCount.textContent = ""; draw(); return; }
-  matches = new Set(pts.filter(p =>
-    p.uid.toLowerCase().includes(q) ||
-    (p.subpath || "").toLowerCase().includes(q) ||
-    p.terms.some(t => t.includes(q))
-  ));
-  qCount.textContent = matches.size + " match" + (matches.size === 1 ? "" : "es");
-  draw();
-});
-qEl.addEventListener("keydown", e => { if (e.key === "Escape"){ qEl.value=""; qEl.dispatchEvent(new Event("input")); }});
-
-function buildLegend(){
-  const el = document.getElementById("legend");
-  for (const g of Object.keys(COLORS)){
-    const n = pts.filter(p => groupOf(p) === g).length;
-    const k = document.createElement("span");
-    k.className = "key";
-    k.innerHTML = `<span class="dot" style="background:${COLORS[g]}"></span>${NAMES[g]} · ${n}`;
-    k.onclick = () => { hidden.has(g) ? hidden.delete(g) : hidden.add(g);
-      k.classList.toggle("off"); draw(); };
-    el.appendChild(k);
-  }
-}
-
-function resize(){
-  const r = canvas.getBoundingClientRect();
-  canvas.width = r.width * devicePixelRatio;
-  canvas.height = r.height * devicePixelRatio;
-  draw();
-}
-addEventListener("resize", resize);
-
-function toScreen(p){
-  const v = view(), w = canvas.width, h = canvas.height;
-  const s = Math.min(w, h) * v.k;
-  return [w/2 + (px(p) - v.cx) * s + v.x * devicePixelRatio,
-          h/2 + (py(p) - v.cy) * s + v.y * devicePixelRatio];
-}
-
-function draw(){
-  if (!pts.length || !view()) return;
-  const w = canvas.width, h = canvas.height;
-  ctx.clearRect(0, 0, w, h);
-  const dimColor = getComputedStyle(document.documentElement)
-    .getPropertyValue("--rule").trim() || "#999";
-  for (const p of pts){
-    const g = groupOf(p);
-    if (hidden.has(g)) continue;
-    const [x, y] = toScreen(p);
-    if (x < -12 || y < -12 || x > w + 12 || y > h + 12) continue;
-    const dim = matches && !matches.has(p);
-    ctx.globalAlpha = dim ? 0.55 : (hover === p ? 1 : 0.85);
-    ctx.fillStyle = dim ? dimColor : (COLORS[g] || "#888");
-    const r = radius(p) * devicePixelRatio * (hover === p ? 1.6 : 1);
-    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-    if (matches && matches.has(p) && matches.size <= 400){
-      ctx.globalAlpha = 0.9; ctx.strokeStyle = COLORS[g];
-      ctx.lineWidth = devicePixelRatio;
-      ctx.beginPath(); ctx.arc(x, y, r + 2.5 * devicePixelRatio, 0, 7); ctx.stroke();
-    }
-  }
-  ctx.globalAlpha = 1;
-}
-
-let drag = null;
-canvas.addEventListener("pointerdown", e => {
-  const v = view();
-  drag = {x: e.clientX - v.x, y: e.clientY - v.y};
-  canvas.setPointerCapture(e.pointerId); canvas.style.cursor = "grabbing";
-});
-canvas.addEventListener("pointerup", () => { drag = null; canvas.style.cursor = "grab"; });
-canvas.addEventListener("pointermove", e => {
-  const v = view();
-  if (drag){ v.x = e.clientX - drag.x; v.y = e.clientY - drag.y; draw(); return; }
-  const r = canvas.getBoundingClientRect();
-  const mx = (e.clientX - r.left) * devicePixelRatio, my = (e.clientY - r.top) * devicePixelRatio;
-  let best = null, bd = 12 * devicePixelRatio;
-  for (const p of pts){
-    if (hidden.has(groupOf(p))) continue;
-    if (matches && !matches.has(p)) continue;
-    const [x, y] = toScreen(p);
-    const d = Math.hypot(x - mx, y - my);
-    if (d < bd){ bd = d; best = p; }
-  }
-  if (best !== hover){ hover = best; draw(); }
-  if (best){
-    tip.style.display = "block";
-    tip.style.left = (e.clientX - r.left + 14) + "px";
-    tip.style.top = (e.clientY - r.top + 14) + "px";
-    tip.innerHTML = `<div class="uid">${best.uid}</div>
-      <div class="meta">${best.basket} · ${best.subpath || best.nikaya} · ${best.n} segments</div>
-      <div class="terms">${best.terms.slice(0,6).join(" · ")}</div>
-      <div class="meta">click to read</div>`;
-  } else tip.style.display = "none";
-});
-canvas.addEventListener("pointerleave", () => { tip.style.display = "none"; hover = null; draw(); });
-
-// zoom anchored under the cursor
-canvas.addEventListener("wheel", e => {
-  e.preventDefault();
-  const v = view(), r = canvas.getBoundingClientRect();
-  const f = Math.exp(-e.deltaY * 0.0015);
-  const mx = e.clientX - r.left - r.width / 2;   // cursor rel. to canvas center, css px
-  const my = e.clientY - r.top - r.height / 2;
-  v.k *= f;
-  v.x = (1 - f) * mx + f * v.x;
-  v.y = (1 - f) * my + f * v.y;
-  draw();
-}, {passive: false});
-
-// ---- reading panel ----
-const reader = document.getElementById("reader");
+// ---- reader with clickable words ----
 const rbody = document.getElementById("rbody");
+const rhead = document.getElementById("rhead");
 const textCache = new Map();
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const WORD = /[A-Za-zāīūṁṃṅñṭḍṇḷĀĪŪṀṂṄÑṬḌṆḶ’']+/g;
 
-function pickAt(clientX, clientY){
-  const r = canvas.getBoundingClientRect();
-  const mx = (clientX - r.left) * devicePixelRatio, my = (clientY - r.top) * devicePixelRatio;
-  let best = null, bd = 12 * devicePixelRatio;
-  for (const p of pts){
-    if (hidden.has(groupOf(p))) continue;
-    if (matches && !matches.has(p)) continue;
-    const [x, y] = toScreen(p);
-    const d = Math.hypot(x - mx, y - my);
-    if (d < bd){ bd = d; best = p; }
-  }
-  return best;
+function paliSpans(s){
+  let out = esc(s).replace(/&lt;(\/?b)&gt;/g, "<$1>");
+  return out.replace(WORD, m => {
+    if (m === "b") return m;   // stray tag letters from restored <b> markup
+    const lw = m.toLowerCase();
+    const isTerm = termIdx.has(lw);
+    return `<span class="w${isTerm ? " ct" : ""}" data-w="${lw}">${m}</span>`;
+  });
 }
-canvas.addEventListener("click", e => {
-  const p = hover || pickAt(e.clientX, e.clientY);
-  if (p) openReader(p);
+rbody.addEventListener("click", e => {
+  const t = e.target.closest(".w");
+  if (t) wordClick(t.dataset.w);
 });
-document.getElementById("rclose").onclick = closeReader;
-addEventListener("keydown", e => {
-  if (e.key === "Escape" && !reader.hidden && document.activeElement !== qEl){
-    closeReader();
+function relitReader(){
+  const litSet = termMatches && termMatches.size <= 50
+    ? new Set([...termMatches].map(p => p.t)) : null;
+  for (const el of rbody.querySelectorAll(".w")){
+    el.classList.toggle("lit", !!(litSet && litSet.has(el.dataset.w)));
   }
-});
-
-function closeReader(){ reader.hidden = true; resize(); }
-
+}
 async function openReader(p){
-  reader.hidden = false;
-  reader.querySelector(".ruid").textContent = p.uid;
-  reader.querySelector(".rmeta").textContent =
+  rhead.querySelector(".ruid").textContent = p.uid;
+  rhead.querySelector(".rmeta").textContent =
     `${p.basket} · ${p.subpath || p.nikaya} · ${p.n} segments`;
-  reader.querySelector(".rsc").href = "https://suttacentral.net/" + p.uid;
+  const sc = rhead.querySelector(".rsc");
+  sc.hidden = false; sc.href = "https://suttacentral.net/" + p.uid;
   rbody.innerHTML = '<p class="note">loading…</p>';
-  resize();
   try {
     let doc = textCache.get(p.uid);
     if (!doc){
@@ -423,42 +571,33 @@ async function openReader(p){
       if (!r.ok) throw new Error(r.status);
       doc = await r.json();
       textCache.set(p.uid, doc);
-      if (textCache.size > 60) textCache.delete(textCache.keys().next().value);
+      if (textCache.size > 40) textCache.delete(textCache.keys().next().value);
     }
-    renderDoc(p, doc);
+    const parts = [];
+    const untranslated = doc.segs.filter(s => s[1] && !s[2]).length;
+    if (untranslated > doc.segs.length * 0.5){
+      parts.push(`<p class="note">Mostly untranslated — ${untranslated} of ${doc.segs.length} segments have no English yet. Click any Pali word to look it up.</p>`);
+    } else if (doc.translator){
+      parts.push(`<p class="note">English: ${esc(doc.translator)} (via bilara-data). Click any Pali word to look it up; dotted words are on the concept map.</p>`);
+    }
+    for (const [sid, pali, en] of doc.segs){
+      if (/:0\./.test(sid)){
+        const t = (en || pali || "").trim();
+        if (t) parts.push(`<h3>${esc(t)}</h3>`);
+        continue;
+      }
+      parts.push('<div class="seg">');
+      if (pali && pali.trim()) parts.push(`<p class="p">${paliSpans(pali.trim())}</p>`);
+      if (en && en.trim()) parts.push(`<p class="e">${esc(en.trim())}</p>`);
+      parts.push('</div>');
+    }
+    rbody.innerHTML = parts.join("");
+    rbody.scrollTop = 0;
+    relitReader();
   } catch (err){
-    rbody.innerHTML = `<p class="note">Couldn’t load this text (${err.message}).
-      Try it on <a href="https://suttacentral.net/${p.uid}" target="_blank" rel="noopener">SuttaCentral</a>.</p>`;
+    rbody.innerHTML = `<p class="note">Couldn’t load (${err.message}). Try
+      <a href="https://suttacentral.net/${p.uid}" target="_blank" rel="noopener">SuttaCentral</a>.</p>`;
   }
-}
-
-const escHtml = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-// pali strings may carry <b>…</b> lemma markup: escape everything, then restore <b>
-const paliHtml = s => escHtml(s).replace(/&lt;(\/?b)&gt;/g, "<$1>");
-
-function renderDoc(p, doc){
-  const parts = [];
-  const untranslated = doc.segs.filter(s => s[1] && !s[2]).length;
-  if (untranslated > doc.segs.length * 0.5){
-    parts.push(`<p class="note">Mostly untranslated — ${untranslated} of
-      ${doc.segs.length} segments have no English yet.</p>`);
-  } else if (doc.translator){
-    parts.push(`<p class="note">English: ${escHtml(doc.translator)} (via bilara-data)</p>`);
-  }
-  for (const [sid, pali, en] of doc.segs){
-    const isHead = /:0\./.test(sid);
-    if (isHead){
-      const t = (en || pali || "").trim();
-      if (t) parts.push(`<h3>${escHtml(t)}</h3>`);
-      continue;
-    }
-    parts.push('<div class="seg">');
-    if (pali && pali.trim()) parts.push(`<p class="p">${paliHtml(pali.trim())}</p>`);
-    if (en && en.trim()) parts.push(`<p class="e">${escHtml(en.trim())}</p>`);
-    parts.push('</div>');
-  }
-  rbody.innerHTML = parts.join("");
-  rbody.scrollTop = 0;
 }
 </script>
 </body>
