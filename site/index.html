@@ -33,9 +33,30 @@ h1 a{color:inherit; text-decoration:none}
   padding:.4rem .7rem; font:inherit; width:16rem;}
 #q:focus{outline:1.5px solid var(--accent);}
 #qcount{color:var(--muted);}
-#wrap{position:relative; margin:.6rem 1.5rem;}
+#wrap{display:flex; gap:.8rem; margin:.6rem 1.5rem; align-items:stretch;}
+#mapbox{position:relative; flex:1; min-width:0;}
 canvas{width:100%; height:74vh; display:block; border:1px solid var(--rule);
   border-radius:6px; background:var(--bg); cursor:grab; touch-action:none;}
+#reader{width:46%; max-width:46rem; height:74vh; border:1px solid var(--rule);
+  border-radius:6px; background:var(--bg); display:flex; flex-direction:column;}
+#reader[hidden]{display:none;}
+#rhead{display:flex; align-items:baseline; gap:.7rem; flex-wrap:wrap;
+  padding:.8rem 1.1rem .6rem; border-bottom:1px solid var(--rule);
+  font-family:system-ui,sans-serif;}
+#rhead .ruid{font-weight:700; font-size:1rem;}
+#rhead .rmeta{color:var(--muted); font-size:.75rem;}
+#rhead a{color:var(--accent); font-size:.75rem; text-decoration:none;}
+#rclose{margin-left:auto; border:0; background:transparent; color:var(--muted);
+  font:inherit; font-size:1.05rem; cursor:pointer; padding:0 .2rem;}
+#rclose:hover{color:var(--accent);}
+#rbody{overflow-y:auto; padding: .9rem 1.2rem 2rem; line-height:1.55;}
+#rbody h3{font-family:system-ui,sans-serif; font-size:.72rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--muted); margin:1.1rem 0 .4rem;}
+#rbody .seg{margin:0 0 .65rem;}
+#rbody .p{color:var(--accent); font-style:italic; margin:0; font-size:.92rem;}
+#rbody .e{margin:.1rem 0 0;}
+#rbody .note{color:var(--muted); font-family:system-ui,sans-serif; font-size:.78rem;
+  background:var(--card); border-radius:6px; padding:.5rem .7rem; margin:0 0 1rem;}
 #tip{position:absolute; pointer-events:none; display:none; max-width:16rem;
   background:var(--card); border:1px solid var(--rule); border-radius:6px;
   padding:.55rem .7rem; font-family:system-ui,sans-serif; font-size:.78rem;
@@ -65,7 +86,7 @@ footer a{color:var(--accent)}
   </nav>
   <p class="sub">Every text of the Pali canon, placed by what it talks about.
   Point size tracks text length. Drag to pan, scroll to zoom, hover for a text's
-  strongest terms, click through to SuttaCentral.</p>
+  strongest terms, click a point to read it here.</p>
 </header>
 <div id="controls">
   <span class="toggle" role="group" aria-label="layout">
@@ -77,8 +98,19 @@ footer a{color:var(--accent)}
   <span id="qcount"></span>
 </div>
 <div id="wrap">
-  <canvas id="c"></canvas>
-  <div id="tip"></div>
+  <div id="mapbox">
+    <canvas id="c"></canvas>
+    <div id="tip"></div>
+  </div>
+  <aside id="reader" hidden aria-label="reading panel">
+    <div id="rhead">
+      <span class="ruid"></span>
+      <span class="rmeta"></span>
+      <a class="rsc" target="_blank" rel="noopener">SuttaCentral ↗</a>
+      <button id="rclose" title="close (Esc)">✕</button>
+    </div>
+    <div id="rbody"></div>
+  </aside>
 </div>
 <div id="legend"></div>
 <footer>
@@ -234,7 +266,7 @@ canvas.addEventListener("pointermove", e => {
     tip.innerHTML = `<div class="uid">${best.uid}</div>
       <div class="meta">${best.basket} · ${best.subpath || best.nikaya} · ${best.n} segments</div>
       <div class="terms">${best.terms.slice(0,6).join(" · ")}</div>
-      <div class="meta">→ suttacentral.net/${best.uid}</div>`;
+      <div class="meta">click to read</div>`;
   } else tip.style.display = "none";
 });
 canvas.addEventListener("pointerleave", () => { tip.style.display = "none"; hover = null; draw(); });
@@ -252,9 +284,73 @@ canvas.addEventListener("wheel", e => {
   draw();
 }, {passive: false});
 
-canvas.addEventListener("click", () => {
-  if (hover) window.open("https://suttacentral.net/" + hover.uid, "_blank");
+// ---- reading panel ----
+const reader = document.getElementById("reader");
+const rbody = document.getElementById("rbody");
+const textCache = new Map();
+
+canvas.addEventListener("click", () => { if (hover) openReader(hover); });
+document.getElementById("rclose").onclick = closeReader;
+addEventListener("keydown", e => {
+  if (e.key === "Escape" && !reader.hidden && document.activeElement !== qEl){
+    closeReader();
+  }
 });
+
+function closeReader(){ reader.hidden = true; resize(); }
+
+async function openReader(p){
+  reader.hidden = false;
+  reader.querySelector(".ruid").textContent = p.uid;
+  reader.querySelector(".rmeta").textContent =
+    `${p.basket} · ${p.subpath || p.nikaya} · ${p.n} segments`;
+  reader.querySelector(".rsc").href = "https://suttacentral.net/" + p.uid;
+  rbody.innerHTML = '<p class="note">loading…</p>';
+  resize();
+  try {
+    let doc = textCache.get(p.uid);
+    if (!doc){
+      const r = await fetch("texts/" + p.uid + ".json");
+      if (!r.ok) throw new Error(r.status);
+      doc = await r.json();
+      textCache.set(p.uid, doc);
+      if (textCache.size > 60) textCache.delete(textCache.keys().next().value);
+    }
+    renderDoc(p, doc);
+  } catch (err){
+    rbody.innerHTML = `<p class="note">Couldn’t load this text (${err.message}).
+      Try it on <a href="https://suttacentral.net/${p.uid}" target="_blank" rel="noopener">SuttaCentral</a>.</p>`;
+  }
+}
+
+const escHtml = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+// pali strings may carry <b>…</b> lemma markup: escape everything, then restore <b>
+const paliHtml = s => escHtml(s).replace(/&lt;(\/?b)&gt;/g, "<$1>");
+
+function renderDoc(p, doc){
+  const parts = [];
+  const untranslated = doc.segs.filter(s => s[1] && !s[2]).length;
+  if (untranslated > doc.segs.length * 0.5){
+    parts.push(`<p class="note">Mostly untranslated — ${untranslated} of
+      ${doc.segs.length} segments have no English yet.</p>`);
+  } else if (doc.translator){
+    parts.push(`<p class="note">English: ${escHtml(doc.translator)} (via bilara-data)</p>`);
+  }
+  for (const [sid, pali, en] of doc.segs){
+    const isHead = /:0\./.test(sid);
+    if (isHead){
+      const t = (en || pali || "").trim();
+      if (t) parts.push(`<h3>${escHtml(t)}</h3>`);
+      continue;
+    }
+    parts.push('<div class="seg">');
+    if (pali && pali.trim()) parts.push(`<p class="p">${paliHtml(pali.trim())}</p>`);
+    if (en && en.trim()) parts.push(`<p class="e">${escHtml(en.trim())}</p>`);
+    parts.push('</div>');
+  }
+  rbody.innerHTML = parts.join("");
+  rbody.scrollTop = 0;
+}
 </script>
 </body>
 </html>
