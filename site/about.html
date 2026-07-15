@@ -27,8 +27,7 @@ a{color:var(--accent);}
   <h1><a href="./">buddhomics</a></h1>
   <nav class="nav">
     <a href="./">map</a>
-    <a href="concepts.html">concepts</a>
-    <a href="tree.html">tree</a>
+    <a href="explore.html">explore</a>
     <a href="about.html" aria-current="page">about</a>
   </nav>
 </header>
@@ -38,8 +37,10 @@ a{color:var(--accent);}
   <a href="https://github.com/suttacentral/bilara-data">bilara-data</a> corpus
   (Mahāsaṅgīti edition; translations by Bhikkhu Sujato and Bhikkhu Brahmali where
   available). Each level of the canon — sound, word, segment, discourse, collection,
-  basket — gets its own feature signal and its own view. This first release ships the
-  discourse level (the map) and the collection level (the tree).</p>
+  basket — gets its own feature signal and its own view. The current release ships the
+  discourse level (the map, with a curated taxonomy browser and a built-in reader) and
+  a dual concepts ⇄ texts explorer. Collection-level tree inference lives in the
+  analysis pipeline and will return to the site in a future pass.</p>
 
   <h2>How the map is made</h2>
   <p>Each of the 6,959 texts is represented by TF-IDF weights over a 40,000-term
@@ -48,13 +49,11 @@ a{color:var(--accent);}
   are the traditional groupings — the layout knows nothing about them, which is what
   makes the agreements and the mixtures interesting.</p>
 
-  <h2>How the tree is made</h2>
-  <p>Collections (saṁyuttas, nipātas, books) are averaged into lexical centroids and
-  clustered bottom-up. The result is a tree inferred purely from word use, displayed
-  against the canonical hierarchy. Where the inferred tree keeps canonical siblings
-  together, vocabulary tracks the traditional structure; where it doesn't, something
-  more interesting is going on — genre cutting across baskets, late texts clustering
-  by register, formulaic material finding its kin.</p>
+  <h2>How the explorer works</h2>
+  <p>The explore page puts the term map and the text map side by side, joined by a
+  term–document incidence matrix over the full Pali text. Click a term to see every
+  text that contains it; click a text to see its vocabulary footprint — and read it,
+  Pali and English interleaved.</p>
 
   <h2>Caveats</h2>
   <p class="muted">Lexical similarity is not doctrine, chronology, or authorship.

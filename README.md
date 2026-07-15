@@ -53,13 +53,18 @@ uv run scripts/build_tree.py       # collection centroids -> cosine average-link
 uv run scripts/build_concepts.py   # LSA term vectors -> t-SNE concept map with numbered-list overlays
 uv run scripts/build_taxonomy.py   # curated People/Beings/Places/Lists -> per-term doc membership
 uv run scripts/build_texts.py      # per-document segment JSON for the reading panel
+uv run scripts/build_concept_bits.py  # term-doc incidence bitmatrix for the explore page
 cp artifacts/map.json artifacts/concepts.json artifacts/taxonomy.json artifacts/tree.svg site/
 rsync -avz site/ cherch:~/buddhomics.cherch.org/
 ```
 
-The site (`site/`) is dependency-free static HTML/JS: a canvas scatter of all 6,959
-texts (pan/zoom/hover, click-through to SuttaCentral), the inferred-vs-canonical
-dendrogram, and an about page. Live at <https://buddhomics.cherch.org>.
+The site (`site/`) is dependency-free static HTML/JS, live at
+<https://buddhomics.cherch.org>: the document map (taxonomy browser, search,
+UMAP/t-SNE toggle, built-in Pali/English reader) and an explore page pairing the
+concept map with the text map through a term-document incidence bitmatrix — click
+a term to see its texts, click a text to see its vocabulary and read it.
+(The standalone concepts and tree pages were folded into this; tree inference
+still runs in the pipeline via build_tree.py.)
 
 ## Translation bake-off (2026-07-14)
 
