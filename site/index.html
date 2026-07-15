@@ -120,12 +120,17 @@ footer a{color:var(--accent)}
   #controls{margin:.5rem 1rem 0;}
   #q{width:100%; max-width:none; flex:1;}
   #wrap{flex-direction:column; height:auto; margin:.5rem 1rem; gap:.7rem;}
-  #taxo{width:100%; flex:none; max-height:38vh;}
+  /* stacked order on mobile: taxonomy · texts · reader+dict · concepts */
+  #taxo{order:1; width:100%; flex:none; max-height:38vh;}
+  #tpane{order:2;}
+  #right{order:3;}
+  #cpane{order:4;}
   .pane{width:100%; flex:none;}
-  .pane canvas{height:64vw; min-height:280px; max-height:420px;}
+  /* let vertical swipes scroll the page; horizontal still pans the map */
+  .pane canvas{height:64vw; min-height:280px; max-height:420px; touch-action:pan-y;}
   #right{width:100%; max-width:none; min-width:0;}
   #dict{height:8.5rem;}
-  #reader{height:auto; min-height:60vh;}
+  #reader{height:auto; min-height:55vh;}
   #legend{padding:.5rem 1rem 1rem;}
   footer{padding:0 1rem 1.5rem;}
   .tip{max-width:12rem; font-size:.72rem;}
@@ -150,9 +155,9 @@ footer a{color:var(--accent)}
 </div>
 <div id="wrap">
   <nav id="taxo" aria-label="browse by topic"></nav>
-  <div class="pane"><span class="pl">concepts · green = in dictionary</span>
+  <div class="pane" id="cpane"><span class="pl">concepts · green = in dictionary</span>
     <canvas id="cc"></canvas><div class="tip" id="tc"></div></div>
-  <div class="pane"><span class="pl">texts</span>
+  <div class="pane" id="tpane"><span class="pl">texts</span>
     <canvas id="cd"></canvas><div class="tip" id="td"></div></div>
   <div id="right">
     <div id="dict"><p class="empty">Dictionary — click a concept on the map or any
@@ -433,6 +438,7 @@ function makeMap(canvasId, tipId, opts){
     canvas.setPointerCapture(e.pointerId); canvas.style.cursor = "grabbing";
   });
   canvas.addEventListener("pointerup", () => { drag = null; canvas.style.cursor = "grab"; });
+  canvas.addEventListener("pointercancel", () => { drag = null; });  // browser took over (page scroll)
   canvas.addEventListener("pointermove", e => {
     if (drag){
       const nx = e.clientX - drag.x, ny = e.clientY - drag.y;
