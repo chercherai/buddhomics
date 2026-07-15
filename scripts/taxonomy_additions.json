@@ -696,6 +696,35 @@
       "domanass",
       "adukkhamasukh"
      ]
+    },
+    {
+     "t": "— earth (pathavī)",
+     "stems": [
+      "pathavīdhāt",
+      "pathaviyā",
+      "=pathavī"
+     ]
+    },
+    {
+     "t": "— water (āpo)",
+     "stems": [
+      "āpodhāt",
+      "=āpo"
+     ]
+    },
+    {
+     "t": "— fire (tejo)",
+     "stems": [
+      "tejodhāt",
+      "=tejo"
+     ]
+    },
+    {
+     "t": "— air (vāyo)",
+     "stems": [
+      "vāyodhāt",
+      "=vāyo"
+     ]
     }
    ]
   },
@@ -762,6 +791,18 @@
       "anicc",
       "anatt"
      ]
+    },
+    {
+     "t": "— impermanence (anicca)",
+     "stems": [
+      "anicc"
+     ]
+    },
+    {
+     "t": "— not-self (anattā)",
+     "stems": [
+      "anatt"
+     ]
     }
    ]
   },
@@ -796,6 +837,73 @@
      ]
     }
    ]
+  },
+  {
+   "h": "Meditations",
+   "terms": [
+    {
+     "t": "— loving-kindness (mettā)",
+     "stems": [
+      "mettā",
+      "mettāy",
+      "mettaṁ",
+      "mettāsahagat"
+     ]
+    },
+    {
+     "t": "— compassion (karuṇā)",
+     "stems": [
+      "karuṇ"
+     ]
+    },
+    {
+     "t": "— rejoicing (muditā)",
+     "stems": [
+      "mudit"
+     ]
+    },
+    {
+     "t": "— equanimity (upekkhā)",
+     "stems": [
+      "upekkh"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Hindrances & fetters",
+   "terms": [
+    {
+     "t": "— sensual desire",
+     "stems": [
+      "kāmacchand"
+     ]
+    },
+    {
+     "t": "— ill will (byāpāda)",
+     "stems": [
+      "byāpād"
+     ]
+    },
+    {
+     "t": "— dullness & drowsiness",
+     "stems": [
+      "thinamiddh"
+     ]
+    },
+    {
+     "t": "— restlessness & remorse",
+     "stems": [
+      "uddhaccakukkucc"
+     ]
+    },
+    {
+     "t": "— doubt (vicikicchā)",
+     "stems": [
+      "vicikicch"
+     ]
+    }
+   ]
   }
  ],
  "Doctrine & Mind": [
@@ -822,6 +930,26 @@
      "t": "Greed & lust",
      "stems": [
       "rāga"
+     ]
+    },
+    {
+     "t": "Hate (dosa)",
+     "stems": [
+      "=doso",
+      "=dosaṁ",
+      "=dosā",
+      "=dosena",
+      "dosagg"
+     ]
+    },
+    {
+     "t": "Delusion (moha)",
+     "stems": [
+      "=moho",
+      "=mohaṁ",
+      "=mohā",
+      "=mohena",
+      "mohagg"
      ]
     }
    ]
@@ -906,6 +1034,32 @@
      "t": "Identity view",
      "stems": [
       "sakkāyadiṭṭh"
+     ]
+    },
+    {
+     "t": "Wrong view (micchādiṭṭhi)",
+     "stems": [
+      "micchādiṭṭh"
+     ]
+    },
+    {
+     "t": "Right view (sammādiṭṭhi)",
+     "stems": [
+      "sammādiṭṭh"
+     ]
+    },
+    {
+     "t": "Eternalism (sassata)",
+     "stems": [
+      "sassat"
+     ]
+    },
+    {
+     "t": "Annihilationism (uccheda)",
+     "stems": [
+      "ucchedavād",
+      "ucchedadiṭṭh",
+      "ucchedaṁ"
      ]
     }
    ]

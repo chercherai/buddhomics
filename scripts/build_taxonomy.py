@@ -324,12 +324,22 @@ def main() -> None:
     trans_subs = [{"h": "By language", "terms": [
         {"t": name, "docs": d} for name, d in by_lang]}]
     if human:
-        trans_subs.append({"h": "Human", "terms": [
+        trans_subs.append({"h": "Human (English)", "terms": [
             {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d)} for t, d in human]})
     if machine:
-        trans_subs.append({"h": "Machine", "terms": [
+        trans_subs.append({"h": "Machine (English)", "terms": [
             {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d)} for t, d in machine]})
     tree.append({"h": "Translations", "subs": trans_subs})
+
+    # Sort each subgroup's terms by document count (most-cited first), EXCEPT
+    # categories whose curated order is a meaningful doctrinal/canonical sequence
+    # (the aggregates, the 24 conditions, offence classes by gravity, etc.).
+    SEQUENCED = {"Numbered Lists", "Abhidhamma", "Rhetoric", "Vinaya"}
+    for node in tree:
+        if node["h"] in SEQUENCED:
+            continue
+        for sub in node["subs"]:
+            sub["terms"].sort(key=lambda t: -len(t["docs"]))
 
     out = {"order": uids, "tree": tree}
     (A / "taxonomy.json").write_text(json.dumps(out, ensure_ascii=False))

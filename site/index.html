@@ -112,14 +112,16 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
 #rhead .ruid{font-weight:700;}
 #rhead .rmeta{color:var(--muted); font-size:.7rem;}
 #rhead a{color:var(--accent); font-size:.7rem; text-decoration:none;}
-.rtrans{margin-left:auto; display:inline-flex; flex-wrap:wrap; gap:.25rem;
+.rtrans{margin-left:.5rem; display:inline-flex; flex-wrap:wrap; gap:.25rem;
   font-family:system-ui,sans-serif; font-size:.68rem;}
 .rtrans button{border:1px solid var(--rule); background:transparent; color:var(--muted);
   padding:.12rem .5rem; border-radius:5px; cursor:pointer; font:inherit;}
 .rtrans button[aria-pressed="true"]{background:var(--card); color:var(--accent); font-weight:600;
   border-color:var(--card);}
-#rbody .prov{font-family:system-ui,sans-serif; font-size:.6rem; letter-spacing:.06em;
-  text-transform:uppercase; color:var(--muted); margin-left:.4rem; vertical-align:.05rem;}
+#rbody .prov{display:inline-block; width:.5rem; height:.5rem; border-radius:50%;
+  margin-left:.35rem; vertical-align:baseline; opacity:.9;}
+.rview{font-size:.68rem; margin-left:auto;}
+.rview button{padding:.12rem .55rem;}
 #rbody{overflow-y:auto; padding:.7rem .9rem 2rem; line-height:1.5; font-size:.9rem; flex:1;}
 #rbody h3{font-family:system-ui,sans-serif; font-size:.66rem; letter-spacing:.09em;
   text-transform:uppercase; color:var(--muted); margin:.9rem 0 .3rem;}
@@ -199,6 +201,11 @@ footer a{color:var(--accent)}
       <div id="rhead">
         <span class="ruid">reader</span><span class="rmeta">click a text to read it here</span>
         <a class="rsc" target="_blank" rel="noopener" hidden>SuttaCentral ↗</a>
+        <span class="toggle rview" role="group" aria-label="display">
+          <button data-view="pali">Pali</button>
+          <button data-view="both" aria-pressed="true">Both</button>
+          <button data-view="english">English</button>
+        </span>
         <span class="rtrans" role="group" aria-label="translator"></span>
       </div>
       <div id="rbody"><p class="note">Nothing open yet. Click a point on the texts map.</p></div>
@@ -236,10 +243,14 @@ const docIdx = new Map();         // doc point -> row index (for concept co-occu
 let termMatches = null, docMatches = null;   // Sets of point objects
 let hiddenGroups = new Set(), taxoActive = null, currentDoc = null;
 let readerDoc = null, readerSel = null;         // open doc JSON + active translator selection
+let readerView = "both";                         // pali | both | english display mode
 const READER_NAMES = {sujato:"Bhikkhu Sujato", brahmali:"Bhikkhu Brahmali",
   kelly:"John Kelly", soma:"Bhikkhu Soma", patton:"Charles Patton",
   suddhaso:"Bhikkhu Suddhāso", anandajoti:"Bhikkhu Ānandajoti", kovilo:"Bhikkhu Kovilo",
   "claude-fable-5":"Claude Fable 5", "gpt-5.6-sol":"GPT-5.6"};
+// per-model dot colours for provenance markers (copy-paste-safe: empty spans)
+const READER_DOT = {"claude-fable-5":"#a78bfa", "gpt-5.6-sol":"#2dd4bf"};
+const provDot = m => `<span class="prov" style="background:${READER_DOT[m] || "#888"}" title="${escA(READER_NAMES[m] || m)}"></span>`;
 let names = null, conceptLang = "pali";        // DPPN names; concept-label language
 const dpdShards = new Map();                    // shard key -> {form: [defs]}
 let dictReqToken = 0;                           // guards async dict renders against races
@@ -931,6 +942,14 @@ rhead.querySelector(".rtrans").addEventListener("click", e => {
     btn.setAttribute("aria-pressed", btn === b);
   renderReaderBody();
 });
+rhead.querySelector(".rview").addEventListener("click", e => {
+  const b = e.target.closest("button[data-view]");
+  if (!b) return;
+  readerView = b.dataset.view;
+  for (const btn of rhead.querySelectorAll(".rview button"))
+    btn.setAttribute("aria-pressed", btn === b);
+  if (readerDoc) renderReaderBody();
+});
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 // bilara/machine text carries inline markup: render <b>/<i>/<em> as formatting,
 // drop <a>/<j> (keep their inner text) so no raw tags ever show in the reader
@@ -985,12 +1004,17 @@ function buildSwitcher(){
   const humans = readerDoc.translators.filter(t => t.kind === "human");
   const machines = readerDoc.translators.filter(t => t.kind === "machine");
   const nm = t => READER_NAMES[t.id] || t.name;
-  const opts = humans.map(t => ({sel: t.id, label: nm(t)}));
-  if (machines.length)
-    opts.push({sel: "machine", label: machines.length > 1 ? "Machine" : nm(machines[0])});
-  rt.innerHTML = opts.length > 1 ? opts.map(o =>
-    `<button data-sel="${escA(o.sel)}" aria-pressed="${o.sel === readerSel}">${esc(o.label)}</button>`
-  ).join("") : "";
+  const opts = humans.map(t => ({sel: t.id, html: esc(nm(t))}));
+  if (machines.length){
+    // mixed machine models: carry their dots on the button so it keys the
+    // per-segment provenance dots (single model needs no legend)
+    const dots = machines.length > 1 ? " " + machines.map(t => provDot(t.id)).join("") : "";
+    opts.push({sel: "machine", html: esc(machines.length > 1 ? "Machine" : nm(machines[0])) + dots});
+  }
+  // always render, even with one option — the selector is the translator indicator
+  rt.innerHTML = opts.map(o =>
+    `<button data-sel="${escA(o.sel)}" aria-pressed="${o.sel === readerSel}">${o.html}</button>`
+  ).join("");
 }
 
 function renderReaderBody(){
@@ -998,16 +1022,6 @@ function renderReaderBody(){
   const machineModels = new Set(
     doc.segs.map(s => enOfSeg(s[2], sel)[1]).filter(Boolean));
   const parts = [];
-  const cov = doc.segs.filter(s => s[1] && enOfSeg(s[2], sel)[0]).length;
-  const total = doc.segs.filter(s => s[1]).length;
-  if (sel === "machine"){
-    const which = [...machineModels].map(m => (READER_NAMES[m] || m)).join(" + ") || "Claude Fable 5";
-    parts.push(`<p class="note">English: <b>machine translation by ${esc(which)}</b> — a trial rendering, not a published translation. Click any Pali word to look it up; dotted words are on the concept map.</p>`);
-  } else {
-    const nm = READER_NAMES[sel] || (doc.translators.find(t => t.id === sel) || {}).name || sel;
-    const gap = total && cov < total * 0.95 ? ` · ${total - cov} segments untranslated by ${esc(nm)}` : "";
-    parts.push(`<p class="note">English: ${esc(nm)} (via bilara-data)${gap}. Click any Pali word to look it up; dotted words are on the concept map.</p>`);
-  }
   const tagProv = machineModels.size > 1;   // only tag per-segment when models are mixed
   for (const [sid, pali, td] of doc.segs){
     const [en, model] = enOfSeg(td, sel);
@@ -1017,9 +1031,10 @@ function renderReaderBody(){
       continue;
     }
     parts.push('<div class="seg">');
-    if (pali && pali.trim()) parts.push(`<p class="p">${paliSpans(pali.trim())}</p>`);
-    if (en && en.trim()){
-      const prov = tagProv && model ? `<span class="prov">${esc(READER_NAMES[model] || model)}</span>` : "";
+    if (readerView !== "english" && pali && pali.trim())
+      parts.push(`<p class="p">${paliSpans(pali.trim())}</p>`);
+    if (readerView !== "pali" && en && en.trim()){
+      const prov = tagProv && model ? provDot(model) : "";
       parts.push(`<p class="e">${richText(en.trim())}${prov}</p>`);
     }
     parts.push('</div>');
