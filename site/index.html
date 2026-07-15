@@ -617,7 +617,8 @@ function drawClusterLabels(ctx, M, data){
 
 const CC = makeMap("cc", "tc", {
   pts: () => terms, px: p => p.x, py: p => p.y,
-  skip: p => filterActive() && termMatches && !termMatches.has(p),
+  // concept map stays fully hoverable/clickable even under a filter (it's the
+  // exploration surface); the filter only dims, it doesn't lock interaction
   tipHtml: p => `<div class="hd" style="font-style:italic">${p.t}</div>
     ${p.en ? `<div class="meta">${esc(p.en)}</div>` : ""}
     <div class="meta">in ${p.df} texts · click to commit</div>`,
