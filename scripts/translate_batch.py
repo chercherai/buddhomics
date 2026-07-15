@@ -33,14 +33,31 @@ OUT = A / "translations_fable.parquet"
 MANIFEST = A / "batch_manifest.json"
 
 
-def build_requests(subpaths=None, uids=None):
+def refused_uids():
+    """Docs whose intended translator is Fable (fable-marked or fully targeted)
+    that still carry null-English Pali segments — i.e. Fable refusals/errors.
+    Excludes human (sujato/brahmali) partials, whose gaps are intentional."""
+    d = pl.read_parquet(A / "documents.parquet")
+    s = pl.read_parquet(A / "segments.parquet")
+    mach = set(d.filter((pl.col("translator") == MODEL)
+                        | (pl.col("translated_frac") < 0.05))["uid"].to_list())
+    refused = s.filter(pl.col("uid").is_in(list(mach)) & pl.col("english").is_null()
+                       & pl.col("pali").is_not_null()
+                       & (pl.col("pali").str.strip_chars() != ""))
+    return sorted(set(refused["uid"].to_list()))
+
+
+def build_requests(subpaths=None, uids=None, doc_uids=None, model=MODEL):
     segs = pl.read_parquet(A / "segments.parquet")
-    docs = untranslated_docs(subpaths, uids)
+    # doc_uids: caller-selected doc set used verbatim (no translated_frac filter),
+    # relying on the done-set to skip already-translated segments
+    doclist = list(doc_uids) if doc_uids is not None \
+        else untranslated_docs(subpaths, uids)["uid"].to_list()
     done = set()
     if OUT.exists():
         done = set(pl.read_parquet(OUT)["segment_id"].to_list())
     reqs = []
-    for uid in docs["uid"].to_list():
+    for uid in doclist:
         for cid, chunk in doc_chunks(uid, segs):
             chunk = [(s, p) for s, p in chunk if s not in done]
             if not chunk:
@@ -49,13 +66,13 @@ def build_requests(subpaths=None, uids=None):
             reqs.append(Request(
                 custom_id=cid,
                 params=MessageCreateParamsNonStreaming(
-                    model=MODEL, max_tokens=32000,   # headroom for dense paṭṭhāna/kn chunks
+                    model=model, max_tokens=32000,   # headroom for dense paṭṭhāna/kn chunks
                     system=SYSTEM,
                     messages=[{"role": "user", "content": build_prompt(uid, chunk)}],
                     output_config={"effort": EFFORT, "format": schema(seg_ids)},
                 ),
             ))
-    return reqs, len(docs)
+    return reqs, len(doclist)
 
 
 def _cost_estimate(uids):
@@ -118,6 +135,24 @@ def cmd_submit_all(thr=4.2):
         tag = "off-map" if cl == -1 else f"cluster {cl}"
         print(f"{tag}: {nd} docs / {len(reqs)} reqs -> {batch.id} (~${cost:.2f})")
     print(f"\nsubmitted {len(manifest)} batches -> {MANIFEST}")
+
+
+def cmd_submit_refused():
+    """Retry every Fable-refused segment (one batch), skipping already-done."""
+    load_env()
+    client = anthropic.Anthropic()
+    uids = refused_uids()
+    if not uids:
+        print("no refused segments — nothing to retry")
+        return
+    _, chars, cost = _cost_estimate(uids)
+    reqs, nd = build_requests(doc_uids=uids)
+    print(f"{nd} docs / {len(reqs)} requests of refused segments (~${cost:.2f})")
+    batch = client.messages.batches.create(requests=reqs)
+    MANIFEST.write_text(json.dumps(
+        [{"cluster": "refused-retry", "batch_id": batch.id, "ndocs": nd,
+          "nreq": len(reqs), "est_cost": round(cost, 2)}], indent=1))
+    print(f"batch id: {batch.id}\nstatus: {batch.processing_status}")
 
 
 def cmd_poll_all():
@@ -207,6 +242,8 @@ def main():
     elif cmd == "submit-all":
         _, thr = _parse_thr(rest)
         cmd_submit_all(thr)
+    elif cmd == "submit-refused":
+        cmd_submit_refused()
     elif cmd == "poll-all":
         cmd_poll_all()
     elif cmd == "merge-all":
