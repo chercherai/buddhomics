@@ -67,11 +67,50 @@ def schema(seg_ids: list[str] | None = None) -> dict:
     }
 
 
-def untranslated_docs(subpaths: list[str] | None = None) -> pl.DataFrame:
+def untranslated_docs(subpaths: list[str] | None = None,
+                      uids: list[str] | None = None) -> pl.DataFrame:
     docs = pl.read_parquet(A / "documents.parquet").filter(pl.col("translated_frac") < 0.05)
     if subpaths:
         docs = docs.filter(pl.col("subpath").is_in(subpaths))
+    if uids is not None:
+        docs = docs.filter(pl.col("uid").is_in(uids))
     return docs
+
+
+def cluster_assignment(thr: float = 4.2) -> dict[str, int]:
+    """uid -> single-linkage cluster id on the deployed t-SNE (tx,ty), cut at thr.
+
+    Off-map docs (short texts absent from map.json) simply won't appear here;
+    callers bucket them separately.
+    """
+    import numpy as np
+    from scipy.cluster.hierarchy import fcluster, linkage
+
+    pts = json.loads((A / "map.json").read_text())
+    xy = np.array([[p["tx"], p["ty"]] for p in pts])
+    assign = fcluster(linkage(xy, method="single"), t=thr, criterion="distance")
+    return {p["uid"]: int(assign[i]) for i, p in enumerate(pts)}
+
+
+def cluster_uids(seeds: list[str], thr: float = 4.2) -> list[str]:
+    """UIDs of the single-linkage t-SNE cluster(s) containing any seed doc.
+
+    A doc is a seed if its subpath leaf (e.g. 'patthana1') or its uid equals or
+    prefix-matches one of `seeds`. SLC runs on the deployed t-SNE (tx,ty) cut at
+    `thr` — the same clustering the site labels — so 'the cluster around X' means
+    the whole connected blob X sits in, not just X's own subpath.
+    """
+    pts = json.loads((A / "map.json").read_text())
+    assign = cluster_assignment(thr)
+    sset = {s.lower() for s in seeds}
+
+    def is_seed(p) -> bool:
+        leaf = p["subpath"].rsplit("/", 1)[-1].lower()
+        uid = p["uid"].lower()
+        return any(leaf == s or uid == s or uid.startswith(s + ".") for s in sset)
+
+    tgt = {assign[p["uid"]] for p in pts if is_seed(p)}
+    return [p["uid"] for p in pts if assign[p["uid"]] in tgt]
 
 
 def doc_chunks(uid: str, segs: pl.DataFrame) -> list[tuple[str, list[tuple[str, str]]]]:
