@@ -14,6 +14,8 @@ import numpy as np
 import polars as pl
 from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.manifold import TSNE
+from sklearn.preprocessing import normalize
 
 import umap
 
@@ -60,6 +62,15 @@ def main() -> None:
     )
     xy = reducer.fit_transform(Z)
 
+    # t-SNE on L2-normalized vectors (euclidean on unit sphere ~ cosine,
+    # keeps Barnes-Hut available)
+    Zn = normalize(Z)
+    tsne = TSNE(
+        n_components=2, perplexity=30, init="pca", random_state=42,
+        max_iter=1000,
+    )
+    txy = tsne.fit_transform(Zn)
+
     # top tf-idf terms per doc
     terms = np.array(vec.get_feature_names_out())
     top_terms = []
@@ -79,6 +90,7 @@ def main() -> None:
                 uid=r["uid"], basket=r["basket"], nikaya=r["nikaya"],
                 subpath=r["subpath"], n=r["n_segments"],
                 x=round(float(xy[i, 0]), 3), y=round(float(xy[i, 1]), 3),
+                tx=round(float(txy[i, 0]), 3), ty=round(float(txy[i, 1]), 3),
                 terms=top_terms[i],
             )
         )

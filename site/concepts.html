@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>buddhomics — a map of concepts</title>
+<style>
+:root{
+  --bg:#FAFAF7; --ink:#212633; --muted:#6B7080; --rule:#DDDCD4; --card:#F1F0EA;
+  --accent:#8E2A18;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#15171D; --ink:#DEDCD2; --muted:#8B8F9C; --rule:#2C2F38; --card:#1C1F27;
+  --accent:#C9A45C;
+}}
+*{box-sizing:border-box}
+body{margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;}
+header{padding:1.2rem 1.5rem .4rem; display:flex; align-items:baseline; gap:1.2rem; flex-wrap:wrap;}
+h1{font-size:1.35rem; margin:0; font-weight:600;}
+h1 a{color:inherit; text-decoration:none}
+.nav{font-family:system-ui,sans-serif; font-size:.8rem;}
+.nav a{color:var(--muted); text-decoration:none; margin-right:1rem;}
+.nav a:hover,.nav a[aria-current]{color:var(--accent);}
+.sub{color:var(--muted); font-size:.9rem; margin:.2rem 0 0; max-width:52rem;}
+#controls{display:flex; gap:.8rem; align-items:center; flex-wrap:wrap;
+  margin:1rem 1.5rem 0; font-family:system-ui,sans-serif; font-size:.8rem;}
+#q{border:1px solid var(--rule); border-radius:6px; background:var(--card); color:var(--ink);
+  padding:.4rem .7rem; font:inherit; width:16rem;}
+#q:focus{outline:1.5px solid var(--accent);}
+#qcount{color:var(--muted);}
+#wrap{position:relative; margin:.6rem 1.5rem;}
+canvas{width:100%; height:74vh; display:block; border:1px solid var(--rule);
+  border-radius:6px; background:var(--bg); cursor:grab; touch-action:none;}
+#tip{position:absolute; pointer-events:none; display:none; max-width:16rem;
+  background:var(--card); border:1px solid var(--rule); border-radius:6px;
+  padding:.55rem .7rem; font-family:system-ui,sans-serif; font-size:.78rem;
+  line-height:1.4; box-shadow:0 2px 10px rgba(0,0,0,.12); z-index:3;}
+#tip .t{font-weight:700; font-style:italic; font-size:.95rem;}
+#tip .meta{color:var(--muted);}
+#legend{display:flex; flex-wrap:wrap; gap:.35rem .9rem; padding:.6rem 1.5rem 1.4rem;
+  font-family:system-ui,sans-serif; font-size:.78rem;}
+.key{display:flex; align-items:center; gap:.35rem; cursor:pointer; user-select:none;}
+.key.off{opacity:.3;}
+.key .dot{width:10px; height:10px; border-radius:50%;}
+footer{color:var(--muted); font-family:system-ui,sans-serif; font-size:.75rem;
+  padding:0 1.5rem 2rem; max-width:52rem;}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header>
+  <h1><a href="./">buddhomics</a></h1>
+  <nav class="nav">
+    <a href="./">map</a>
+    <a href="concepts.html" aria-current="page">concepts</a>
+    <a href="tree.html">tree</a>
+    <a href="about.html">about</a>
+  </nav>
+  <p class="sub">The 5,000 most frequent Pali terms, placed by the company they keep
+  across the canon (LSA term vectors, t-SNE). The classic numbered lists — aggregates,
+  dependent origination, wings to awakening, divine abidings — are colored so you can
+  see whether the doctrine's own groupings live together in usage-space. Zoom in for
+  labels.</p>
+</header>
+<div id="controls">
+  <input id="q" type="search" placeholder="search terms…" autocomplete="off" spellcheck="false">
+  <span id="qcount"></span>
+</div>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="tip"></div>
+</div>
+<div id="legend"></div>
+<footer>
+  Term embeddings are rows of V·S from the same 100-dim SVD behind the
+  <a href="./">document map</a>, so a term sits near the documents — and other terms —
+  it co-occurs with. Size tracks how many texts a term appears in. Stems are matched by
+  prefix, so inflected forms of a list term inherit its color.
+</footer>
+<script>
+const GCOLORS = {
+  "aggregates & elements": "#3D5A80",
+  "dependent origination": "#8E2A18",
+  "path & wings": "#3D6B4F",
+  "meditation": "#7A4A9E",
+  "four truths": "#B5541C",
+  "divine abidings": "#C48A00",
+  "ethics & training": "#2E7D82",
+  "liberation": "#A83267",
+};
+const canvas = document.getElementById("c"), tip = document.getElementById("tip");
+const ctx = canvas.getContext("2d");
+let pts = [], hidden = new Set(), hover = null, matches = null;
+let view = null;
+
+const radius = p => Math.min(6.5, 0.8 + 0.9 * Math.log10(p.df));
+
+fetch("concepts.json").then(r => r.json()).then(data => {
+  pts = data;
+  const xs = pts.map(p=>p.x), ys = pts.map(p=>p.y);
+  const cx=(Math.min(...xs)+Math.max(...xs))/2, cy=(Math.min(...ys)+Math.max(...ys))/2;
+  const span = Math.max(Math.max(...xs)-Math.min(...xs), Math.max(...ys)-Math.min(...ys));
+  view = {cx, cy, k: 0.9/span, x: 0, y: 0};
+  buildLegend();
+  resize();
+});
+
+function buildLegend(){
+  const el = document.getElementById("legend");
+  for (const g of Object.keys(GCOLORS)){
+    const n = pts.filter(p=>p.g===g).length;
+    const k = document.createElement("span");
+    k.className = "key";
+    k.innerHTML = `<span class="dot" style="background:${GCOLORS[g]}"></span>${g} · ${n}`;
+    k.onclick = () => { hidden.has(g) ? hidden.delete(g) : hidden.add(g);
+      k.classList.toggle("off"); draw(); };
+    el.appendChild(k);
+  }
+  const k = document.createElement("span");
+  k.className = "key";
+  k.innerHTML = `<span class="dot" style="background:#9a978f"></span>everything else · ${pts.filter(p=>!p.g).length}`;
+  k.onclick = () => { hidden.has(null) ? hidden.delete(null) : hidden.add(null);
+    k.classList.toggle("off"); draw(); };
+  el.appendChild(k);
+}
+
+const qEl = document.getElementById("q"), qCount = document.getElementById("qcount");
+qEl.addEventListener("input", () => {
+  const q = qEl.value.trim().toLowerCase();
+  if (!q){ matches = null; qCount.textContent = ""; draw(); return; }
+  matches = new Set(pts.filter(p => p.t.includes(q)));
+  qCount.textContent = matches.size + " match" + (matches.size === 1 ? "" : "es");
+  draw();
+});
+qEl.addEventListener("keydown", e => { if (e.key === "Escape"){ qEl.value=""; qEl.dispatchEvent(new Event("input")); }});
+
+function resize(){
+  const r = canvas.getBoundingClientRect();
+  canvas.width = r.width * devicePixelRatio;
+  canvas.height = r.height * devicePixelRatio;
+  draw();
+}
+addEventListener("resize", resize);
+
+function toScreen(p){
+  const w = canvas.width, h = canvas.height, s = Math.min(w, h) * view.k;
+  return [w/2 + (p.x - view.cx) * s + view.x * devicePixelRatio,
+          h/2 + (p.y - view.cy) * s + view.y * devicePixelRatio];
+}
+
+function draw(){
+  if (!pts.length || !view) return;
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  const visible = [];
+  for (const p of pts){
+    if (hidden.has(p.g ?? null)) continue;
+    const [x, y] = toScreen(p);
+    if (x < -12 || y < -12 || x > w + 12 || y > h + 12) continue;
+    visible.push([p, x, y]);
+  }
+  const labelAll = visible.length <= 250;
+  for (const [p, x, y] of visible){
+    const dim = matches && !matches.has(p);
+    ctx.globalAlpha = dim ? 0.08 : (p.g ? 0.95 : 0.45);
+    ctx.fillStyle = p.g ? GCOLORS[p.g] : "#9a978f";
+    const r = radius(p) * devicePixelRatio * (hover === p ? 1.6 : 1);
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    if (!dim && (labelAll || (p.g && !matches && visible.length <= 1500) || hover === p)){
+      ctx.globalAlpha = dim ? 0.1 : 0.9;
+      ctx.font = `italic ${Math.max(10, 8 + 2*Math.log10(p.df)) * devicePixelRatio}px Georgia, serif`;
+      ctx.fillText(p.t, x + r + 3 * devicePixelRatio, y + 3 * devicePixelRatio);
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+let drag = null;
+canvas.addEventListener("pointerdown", e => {
+  drag = {x: e.clientX - view.x, y: e.clientY - view.y};
+  canvas.setPointerCapture(e.pointerId); canvas.style.cursor = "grabbing";
+});
+canvas.addEventListener("pointerup", () => { drag = null; canvas.style.cursor = "grab"; });
+canvas.addEventListener("pointermove", e => {
+  if (drag){ view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; draw(); return; }
+  const r = canvas.getBoundingClientRect();
+  const mx = (e.clientX - r.left) * devicePixelRatio, my = (e.clientY - r.top) * devicePixelRatio;
+  let best = null, bd = 12 * devicePixelRatio;
+  for (const p of pts){
+    if (hidden.has(p.g ?? null)) continue;
+    const [x, y] = toScreen(p);
+    const d = Math.hypot(x - mx, y - my);
+    if (d < bd){ bd = d; best = p; }
+  }
+  if (best !== hover){ hover = best; draw(); }
+  if (best){
+    tip.style.display = "block";
+    tip.style.left = (e.clientX - r.left + 14) + "px";
+    tip.style.top = (e.clientY - r.top + 14) + "px";
+    tip.innerHTML = `<div class="t">${best.t}</div>
+      <div class="meta">in ${best.df} texts${best.g ? " · " + best.g : ""}</div>`;
+  } else tip.style.display = "none";
+});
+canvas.addEventListener("pointerleave", () => { tip.style.display = "none"; hover = null; draw(); });
+canvas.addEventListener("wheel", e => {
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect();
+  const f = Math.exp(-e.deltaY * 0.0015);
+  const mx = e.clientX - r.left - r.width / 2;
+  const my = e.clientY - r.top - r.height / 2;
+  view.k *= f;
+  view.x = (1 - f) * mx + f * view.x;
+  view.y = (1 - f) * my + f * view.y;
+  draw();
+}, {passive: false});
+</script>
+</body>
+</html>
