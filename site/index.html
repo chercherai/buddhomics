@@ -948,7 +948,9 @@ async function openReader(p){
   try {
     let doc = textCache.get(p.uid);
     if (!doc){
-      const r = await fetch("texts/" + p.uid + ".json");
+      // no-cache: texts gain English as translation batches land, so a returning
+      // visitor's browser must revalidate rather than serve a stale pre-translation copy
+      const r = await fetch("texts/" + p.uid + ".json", {cache: "no-cache"});
       if (!r.ok) throw new Error(r.status);
       doc = await r.json();
       textCache.set(p.uid, doc);
