@@ -84,6 +84,9 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
 #dict{border:1px solid var(--rule); border-radius:6px; padding:.6rem .8rem;
   height:11rem; flex:none; overflow-y:auto; font-size:.85rem; line-height:1.45;}
 #dict .hw{font-weight:700; font-style:italic; font-size:1rem;}
+#dict .showlink{font-family:system-ui,sans-serif; font-size:.7rem; font-style:normal;
+  color:var(--accent); cursor:pointer; white-space:nowrap;}
+#dict .showlink:hover{text-decoration:underline;}
 #dict .via{color:var(--muted); font-family:system-ui,sans-serif; font-size:.72rem;}
 #dict .g{color:var(--muted); font-style:italic; font-family:system-ui,sans-serif;
   font-size:.75rem;}
@@ -390,9 +393,20 @@ const dictEl = document.getElementById("dict");
 let dictHist = [], dictCur = null;
 dictEl.addEventListener("click", e => {
   if (e.target.closest(".dback")){ dictBack(); return; }
+  const sh = e.target.closest(".showlink");
+  if (sh){ qEl.value = sh.dataset.q; qEl.dispatchEvent(new Event("input")); qEl.focus(); return; }
   const a = e.target.closest("a[data-w]");
   if (a) wordClick(a.dataset.w);
 });
+// a searchable stem for the headword: DPD lemma if we can parse it, else the
+// form with its inflectional ending trimmed (so the Pali lemma search matches)
+function searchStem(w, dpdDefs){
+  if (dpdDefs) for (const d of dpdDefs){
+    const m = d.match(/^([^\s:]+)(?:\s+\d+(?:\.\d+)?)?\s*:/);
+    if (m) return m[1].toLowerCase();
+  }
+  return w.replace(/ṁ$/, "").replace(/[aāiīuūoe]$/, "") || w;
+}
 function dictPush(state){
   if (dictCur && !(dictCur.s !== undefined && state.s !== undefined)){
     dictHist.push(dictCur);
@@ -460,7 +474,8 @@ async function renderDictEntry(w){
       <p class="empty">not found</p>`;
     return;
   }
-  const parts = [backBtn(), `<span class="hw">${esc(w)}</span>`];
+  const parts = [backBtn(), `<span class="hw">${esc(w)}</span>` +
+    ` <a class="showlink" data-q="${escA(searchStem(w, dpdDefs))}">show on maps ↗</a>`];
   if (dpdDefs) for (const d of dpdDefs) parts.push(`<div class="sense">${dpdLine(d)}</div>`);
   if (ncHw){
     parts.push(`<div class="src">NCPED${ncHw !== w ? " · " + esc(ncHw) : ""}</div>`);
