@@ -112,6 +112,14 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
 #rhead .ruid{font-weight:700;}
 #rhead .rmeta{color:var(--muted); font-size:.7rem;}
 #rhead a{color:var(--accent); font-size:.7rem; text-decoration:none;}
+.rtrans{margin-left:auto; display:inline-flex; flex-wrap:wrap; gap:.25rem;
+  font-family:system-ui,sans-serif; font-size:.68rem;}
+.rtrans button{border:1px solid var(--rule); background:transparent; color:var(--muted);
+  padding:.12rem .5rem; border-radius:5px; cursor:pointer; font:inherit;}
+.rtrans button[aria-pressed="true"]{background:var(--card); color:var(--accent); font-weight:600;
+  border-color:var(--card);}
+#rbody .prov{font-family:system-ui,sans-serif; font-size:.6rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted); margin-left:.4rem; vertical-align:.05rem;}
 #rbody{overflow-y:auto; padding:.7rem .9rem 2rem; line-height:1.5; font-size:.9rem; flex:1;}
 #rbody h3{font-family:system-ui,sans-serif; font-size:.66rem; letter-spacing:.09em;
   text-transform:uppercase; color:var(--muted); margin:.9rem 0 .3rem;}
@@ -191,6 +199,7 @@ footer a{color:var(--accent)}
       <div id="rhead">
         <span class="ruid">reader</span><span class="rmeta">click a text to read it here</span>
         <a class="rsc" target="_blank" rel="noopener" hidden>SuttaCentral ↗</a>
+        <span class="rtrans" role="group" aria-label="translator"></span>
       </div>
       <div id="rbody"><p class="note">Nothing open yet. Click a point on the texts map.</p></div>
     </div>
@@ -226,6 +235,10 @@ let termIdx = new Map();          // term string -> index
 const docIdx = new Map();         // doc point -> row index (for concept co-occurrence)
 let termMatches = null, docMatches = null;   // Sets of point objects
 let hiddenGroups = new Set(), taxoActive = null, currentDoc = null;
+let readerDoc = null, readerSel = null;         // open doc JSON + active translator selection
+const READER_NAMES = {sujato:"Sujato", brahmali:"Brahmali", kelly:"Kelly", soma:"Soma",
+  patton:"Patton", suddhaso:"Suddhaso", anandajoti:"Anandajoti", kovilo:"Kovilo",
+  "claude-fable-5":"Claude Fable 5", "gpt-5.6-sol":"GPT-5.6"};
 let names = null, conceptLang = "pali";        // DPPN names; concept-label language
 const dpdShards = new Map();                    // shard key -> {form: [defs]}
 let dictReqToken = 0;                           // guards async dict renders against races
@@ -909,6 +922,14 @@ function buildTaxo(tax){
 const rbody = document.getElementById("rbody");
 const rhead = document.getElementById("rhead");
 const textCache = new Map();
+rhead.querySelector(".rtrans").addEventListener("click", e => {
+  const b = e.target.closest("button[data-sel]");
+  if (!b || !readerDoc) return;
+  readerSel = b.dataset.sel;
+  for (const btn of rhead.querySelectorAll(".rtrans button"))
+    btn.setAttribute("aria-pressed", btn === b);
+  renderReaderBody();
+});
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const WORD = /[A-Za-zāīūṁṃṅñṭḍṇḷĀĪŪṀṂṄÑṬḌṆḶ’']+/g;
 
@@ -941,12 +962,74 @@ function relitReader(){
     el.classList.toggle("lit", !!(litSet && litSet.has(el.dataset.w)));
   }
 }
+// "machine" is a synthetic switcher group spanning every machine-kind translator
+// (Fable, GPT), so a doc translated by more than one model reads as one option
+// with per-segment provenance tags rather than several incomplete ones.
+const isMachine = t => readerDoc && readerDoc.translators.some(x => x.id === t && x.kind === "machine");
+function enOfSeg(td, sel){          // [english, provenanceModelId|null] under selection sel
+  if (!td) return [null, null];
+  if (sel === "machine"){
+    const mid = readerDoc.translators.find(x => x.kind === "machine" && td[x.id]);
+    return mid ? [td[mid.id], mid.id] : [null, null];
+  }
+  return [td[sel] ?? null, null];
+}
+
+function buildSwitcher(){
+  const rt = rhead.querySelector(".rtrans");
+  const humans = readerDoc.translators.filter(t => t.kind === "human");
+  const machines = readerDoc.translators.filter(t => t.kind === "machine");
+  const opts = humans.map(t => ({sel: t.id, label: t.name}));
+  if (machines.length)
+    opts.push({sel: "machine", label: machines.length > 1 ? "Machine" : machines[0].name});
+  rt.innerHTML = opts.length > 1 ? opts.map(o =>
+    `<button data-sel="${escA(o.sel)}" aria-pressed="${o.sel === readerSel}">${esc(o.label)}</button>`
+  ).join("") : "";
+}
+
+function renderReaderBody(){
+  const doc = readerDoc, sel = readerSel;
+  const machineModels = new Set(
+    doc.segs.map(s => enOfSeg(s[2], sel)[1]).filter(Boolean));
+  const parts = [];
+  const cov = doc.segs.filter(s => s[1] && enOfSeg(s[2], sel)[0]).length;
+  const total = doc.segs.filter(s => s[1]).length;
+  if (sel === "machine"){
+    const which = [...machineModels].map(m => (READER_NAMES[m] || m)).join(" + ") || "Claude Fable 5";
+    parts.push(`<p class="note">English: <b>machine translation by ${esc(which)}</b> — a trial rendering, not a published translation. Click any Pali word to look it up; dotted words are on the concept map.</p>`);
+  } else {
+    const nm = (doc.translators.find(t => t.id === sel) || {}).name || sel;
+    const gap = total && cov < total * 0.95 ? ` · ${total - cov} segments untranslated by ${esc(nm)}` : "";
+    parts.push(`<p class="note">English: ${esc(nm)} (via bilara-data)${gap}. Click any Pali word to look it up; dotted words are on the concept map.</p>`);
+  }
+  const tagProv = machineModels.size > 1;   // only tag per-segment when models are mixed
+  for (const [sid, pali, td] of doc.segs){
+    const [en, model] = enOfSeg(td, sel);
+    if (/:0\./.test(sid)){
+      const t = (en || pali || "").trim();
+      if (t) parts.push(`<h3>${esc(t)}</h3>`);
+      continue;
+    }
+    parts.push('<div class="seg">');
+    if (pali && pali.trim()) parts.push(`<p class="p">${paliSpans(pali.trim())}</p>`);
+    if (en && en.trim()){
+      const prov = tagProv && model ? `<span class="prov">${esc(READER_NAMES[model] || model)}</span>` : "";
+      parts.push(`<p class="e">${esc(en.trim())}${prov}</p>`);
+    }
+    parts.push('</div>');
+  }
+  rbody.innerHTML = parts.join("");
+  rbody.scrollTop = 0;
+  relitReader();
+}
+
 async function openReader(p){
   rhead.querySelector(".ruid").textContent = p.uid;
   rhead.querySelector(".rmeta").textContent =
     `${p.basket} · ${p.subpath || p.nikaya} · ${p.n} segments`;
   const sc = rhead.querySelector(".rsc");
   sc.hidden = false; sc.href = "https://suttacentral.net/" + p.uid;
+  rhead.querySelector(".rtrans").innerHTML = "";
   rbody.innerHTML = '<p class="note">loading…</p>';
   try {
     let doc = textCache.get(p.uid);
@@ -959,29 +1042,19 @@ async function openReader(p){
       textCache.set(p.uid, doc);
       if (textCache.size > 40) textCache.delete(textCache.keys().next().value);
     }
-    const parts = [];
-    const untranslated = doc.segs.filter(s => s[1] && !s[2]).length;
-    if (untranslated > doc.segs.length * 0.5){
-      parts.push(`<p class="note">Mostly untranslated — ${untranslated} of ${doc.segs.length} segments have no English yet. Click any Pali word to look it up.</p>`);
-    } else if (doc.translator === "claude-fable-5"){
-      parts.push(`<p class="note">English: <b>machine translation by Claude Fable 5</b> — a trial rendering, not a published translation. Click any Pali word to look it up; dotted words are on the concept map.</p>`);
-    } else if (doc.translator){
-      parts.push(`<p class="note">English: ${esc(doc.translator)} (via bilara-data). Click any Pali word to look it up; dotted words are on the concept map.</p>`);
+    readerDoc = doc;
+    // resolve default (a translator id) to its switcher selection (human id or "machine")
+    readerSel = doc.default ? (isMachine(doc.default) ? "machine" : doc.default) : null;
+    if (!readerSel && !doc.translators.length){
+      const untr = doc.segs.filter(s => s[1]).length;
+      rbody.innerHTML = `<p class="note">Untranslated — ${untr} Pali segments, no English yet. Click any Pali word to look it up.</p>` +
+        doc.segs.map(([sid, pali]) => /:0\./.test(sid)
+          ? (pali && pali.trim() ? `<h3>${esc(pali.trim())}</h3>` : "")
+          : `<div class="seg">${pali && pali.trim() ? `<p class="p">${paliSpans(pali.trim())}</p>` : ""}</div>`).join("");
+      rbody.scrollTop = 0; relitReader(); return;
     }
-    for (const [sid, pali, en] of doc.segs){
-      if (/:0\./.test(sid)){
-        const t = (en || pali || "").trim();
-        if (t) parts.push(`<h3>${esc(t)}</h3>`);
-        continue;
-      }
-      parts.push('<div class="seg">');
-      if (pali && pali.trim()) parts.push(`<p class="p">${paliSpans(pali.trim())}</p>`);
-      if (en && en.trim()) parts.push(`<p class="e">${esc(en.trim())}</p>`);
-      parts.push('</div>');
-    }
-    rbody.innerHTML = parts.join("");
-    rbody.scrollTop = 0;
-    relitReader();
+    buildSwitcher();
+    renderReaderBody();
   } catch (err){
     rbody.innerHTML = `<p class="note">Couldn’t load (${err.message}). Try
       <a href="https://suttacentral.net/${p.uid}" target="_blank" rel="noopener">SuttaCentral</a>.</p>`;

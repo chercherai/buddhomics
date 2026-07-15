@@ -293,10 +293,12 @@ def main() -> None:
     ]})
 
     # ---- Translator: who produced the English (per-doc, from the substrate) ----
-    MACHINE = {"claude-fable-5"}
+    MACHINE = {"claude-fable-5", "gpt-5.6-sol"}
     TR_NAMES = {"sujato": "Bhikkhu Sujato", "brahmali": "Bhikkhu Brahmali",
                 "kelly": "John Kelly", "kovilo": "Bhikkhu Kovilo",
-                "claude-fable-5": "Claude Fable 5"}
+                "soma": "Bhikkhu Soma", "suddhaso": "Bhikkhu Suddhāso",
+                "patton": "Charles Patton", "anandajoti": "Bhikkhu Ānandajoti",
+                "claude-fable-5": "Claude Fable 5", "gpt-5.6-sol": "GPT-5.6"}
     docmeta = pl.read_parquet(A / "documents.parquet")
     uid_tr = dict(docmeta.select("uid", "translator").iter_rows())
     tr_docs: dict[str, list[int]] = {}
