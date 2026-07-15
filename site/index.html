@@ -28,6 +28,10 @@ h1 a{color:inherit; text-decoration:none}
 #q{border:1px solid var(--rule); border-radius:6px; background:var(--card); color:var(--ink);
   padding:.35rem .65rem; font:inherit; width:15rem;}
 #q:focus{outline:1.5px solid var(--accent);}
+.toggle{display:inline-flex; border:1px solid var(--rule); border-radius:6px; overflow:hidden;}
+.toggle button{border:0; background:transparent; color:var(--muted); padding:.32rem .7rem;
+  font:inherit; cursor:pointer;}
+.toggle button[aria-pressed="true"]{background:var(--card); color:var(--accent); font-weight:600;}
 #status{color:var(--muted); min-height:1.1em;}
 #status b{color:var(--accent);}
 #status button{border:0; background:transparent; color:var(--muted); cursor:pointer;
@@ -79,6 +83,10 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
 #dict .g{color:var(--muted); font-style:italic; font-family:system-ui,sans-serif;
   font-size:.75rem;}
 #dict .sense{margin:.25rem 0 0;}
+#dict .sense b{font-weight:600; color:var(--ink);}
+#dict .src{font-family:system-ui,sans-serif; font-size:.66rem; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--muted); margin:.55rem 0 .1rem;
+  border-top:1px solid var(--rule); padding-top:.4rem;}
 #dict .xr{font-family:system-ui,sans-serif; font-size:.75rem; color:var(--muted);}
 #dict .xr a{color:var(--accent); cursor:pointer; font-style:italic;}
 #dict .xr a.onmap{text-decoration:underline dotted; text-underline-offset:2px;}
@@ -155,6 +163,10 @@ footer a{color:var(--accent)}
 <div id="controls">
   <input id="q" type="search" placeholder="search uid, collection, or Pali term…"
     autocomplete="off" spellcheck="false">
+  <span class="toggle" role="group" aria-label="concept map labels">
+    <button id="lg-pali" aria-pressed="true">Pali</button>
+    <button id="lg-en" aria-pressed="false">English</button>
+  </span>
   <span id="status"></span>
 </div>
 <div id="wrap">
@@ -205,12 +217,44 @@ let terms = [], docs = [], bits = null, BPR = 0, dict = null, clusters = null, t
 let termIdx = new Map();          // term string -> index
 let termMatches = null, docMatches = null;   // Sets of point objects
 let hiddenGroups = new Set(), taxoActive = null, currentDoc = null;
+let names = null, conceptLang = "pali";        // DPPN names; concept-label language
+const dpdShards = new Map();                    // shard key -> {form: [defs]}
+let dictReqToken = 0;                           // guards async dict renders against races
 const statusEl = document.getElementById("status");
 const qEl = document.getElementById("q");
+
+// DPD lookups are inflected-form keyed and sharded (first 2 ASCII-folded chars)
+const DFOLD = {"ā":"a","ī":"i","ū":"u","ṁ":"m","ṃ":"m","ṅ":"n","ñ":"n",
+  "ṭ":"t","ḍ":"d","ṇ":"n","ḷ":"l","ṛ":"r","ṝ":"r","ḥ":"h","’":"","'":""};
+function shardKey(w){
+  let s = ""; for (const c of w.toLowerCase()) s += (DFOLD[c] ?? c);
+  s = s.replace(/[^a-z]/g, "");
+  return (s.slice(0, 2) || "_").padEnd(2, "_");
+}
+async function dpdShard(key){
+  if (dpdShards.has(key)) return dpdShards.get(key);
+  let j = {};
+  try { const r = await fetch("dict/" + key + ".json", {cache: "force-cache"});
+        if (r.ok) j = await r.json(); } catch (e) {}
+  dpdShards.set(key, j);
+  return j;
+}
+const dpdLine = d => esc(d).replace(/&lt;(\/?b)&gt;/g, "<$1>");
 const DICT_YES = "#3f7d5e", DICT_NO = "#9b9384";   // concept map: in-dictionary vs not
 // a filter (search/taxonomy) restricts picking to matches; a plain click-selection
 // highlights but keeps everything pickable, and a click on empty space clears it.
 const filterActive = () => !!taxoActive || qEl.value.trim() !== "";
+
+// concept-map label language toggle (Pali term vs its English gloss)
+const conceptLabel = p => (conceptLang === "en" && p.en) ? p.en : p.t;
+for (const [id, lang] of [["lg-pali", "pali"], ["lg-en", "en"]]){
+  document.getElementById(id).onclick = () => {
+    conceptLang = lang;
+    document.getElementById("lg-pali").setAttribute("aria-pressed", lang === "pali");
+    document.getElementById("lg-en").setAttribute("aria-pressed", lang === "en");
+    CC.draw();
+  };
+}
 
 Promise.all([
   fetch("concepts.json", {cache:"no-cache"}).then(r => r.json()),
@@ -225,18 +269,17 @@ Promise.all([
   CC.fit(); CD.fit(); CC.resize(); CD.resize();
   buildLegend(); buildTaxo(tax); markHd();
 });
-fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => { dict = d; markHd(); });
+fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => { dict = d; });
+fetch("names.json", {cache:"no-cache"}).then(r => r.json()).then(n => { names = n; });
 fetch("concept_clusters.json", {cache:"no-cache"}).then(r => r.json())
   .then(c => { clusters = c; CC.draw(); }).catch(() => {});
 fetch("text_clusters.json", {cache:"no-cache"}).then(r => r.json())
   .then(c => { textClusters = c; CD.draw(); }).catch(() => {});
 
-// tag each concept term with whether NCPED has an entry (colours the concept map)
+// concept-map colour: green = has a dictionary gloss (precomputed in concepts.json)
 function markHd(){
-  if (!dict || !terms.length) return;
-  for (const p of terms){
-    p.hd = lookupCandidates(p.t.toLowerCase()).some(c => dict[c]);
-  }
+  if (!terms.length) return;
+  for (const p of terms) p.hd = !!p.en;
   CC.draw();
 }
 
@@ -380,23 +423,33 @@ function showDict(word){
   dictPush({w: String(word).toLowerCase()});
   renderDictEntry(String(word).toLowerCase());
 }
-function renderDictEntry(w){
-  if (!dict){ dictEl.innerHTML = '<p class="empty">dictionary still loading…</p>'; return; }
-  let hw = null;
-  for (const cand of lookupCandidates(w)){
-    if (dict[cand]){ hw = cand; break; }
-  }
-  if (!hw){
+// layered: DPD (inflected-form, primary) + NCPED prose + DPPN proper names
+async function renderDictEntry(w){
+  const token = ++dictReqToken;
+  w = String(w).toLowerCase();
+  let ncHw = null;
+  if (dict) for (const c of lookupCandidates(w)){ if (dict[c]){ ncHw = c; break; } }
+  const shard = await dpdShard(shardKey(w));
+  if (token !== dictReqToken) return;          // a newer lookup superseded this one
+  const dpdDefs = shard[w];
+  const nameTxt = names ? names[w] : null;
+  if (!dpdDefs && !ncHw && !nameTxt){
     dictEl.innerHTML = `${backBtn()}<span class="hw">${esc(w)}</span>
-      <p class="empty">not found in NCPED (inflected form? try a shorter stem)</p>`;
+      <p class="empty">not found</p>`;
     return;
   }
-  const senses = dict[hw].map(s => `<div class="sense">
-    ${s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}
-    ${s.x ? `<div class="xr">see: ${(Array.isArray(s.x) ? s.x : [s.x]).map(dlink).join(", ")}</div>` : ""}
-  </div>`).join("");
-  dictEl.innerHTML = `${backBtn()}<span class="hw">${esc(hw)}</span>
-    ${hw !== w ? `<span class="via">← ${esc(w)}</span>` : ""}${senses}`;
+  const parts = [backBtn(), `<span class="hw">${esc(w)}</span>`];
+  if (dpdDefs) for (const d of dpdDefs) parts.push(`<div class="sense">${dpdLine(d)}</div>`);
+  if (ncHw){
+    parts.push(`<div class="src">NCPED${ncHw !== w ? " · " + esc(ncHw) : ""}</div>`);
+    for (const s of dict[ncHw]) parts.push(`<div class="sense">${
+      s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}${
+      s.x ? `<div class="xr">see: ${(Array.isArray(s.x) ? s.x : [s.x]).map(dlink).join(", ")}</div>` : ""}</div>`);
+  }
+  if (nameTxt){
+    parts.push(`<div class="src">Proper name (DPPN)</div><div class="sense">${esc(nameTxt)}</div>`);
+  }
+  dictEl.innerHTML = parts.join("");
 }
 
 // ---- shared canvas engine ----
@@ -529,7 +582,8 @@ const CC = makeMap("cc", "tc", {
   pts: () => terms, px: p => p.x, py: p => p.y,
   skip: p => filterActive() && termMatches && !termMatches.has(p),
   tipHtml: p => `<div class="hd" style="font-style:italic">${p.t}</div>
-    <div class="meta">in ${p.df} texts${p.g ? " · " + p.g : ""} · click to commit</div>`,
+    ${p.en ? `<div class="meta">${esc(p.en)}</div>` : ""}
+    <div class="meta">in ${p.df} texts · click to commit</div>`,
   onHover: p => { p ? renderDictEntry(p.t.toLowerCase()) : dictRestore(); },
   onClick: p => selectTerm(termIdx.get(p.t)),
   draw: (ctx, M) => {
@@ -563,7 +617,7 @@ const CC = makeMap("cc", "tc", {
       if (showTerm){
         ctx.globalAlpha = 0.92; ctx.fillStyle = ink;
         ctx.font = `italic ${Math.max(12, 10 + 2.4*Math.log10(p.df)) * devicePixelRatio}px Georgia, serif`;
-        ctx.fillText(p.t, x + r + 3 * devicePixelRatio, y + 3.5 * devicePixelRatio);
+        ctx.fillText(conceptLabel(p), x + r + 3 * devicePixelRatio, y + 3.5 * devicePixelRatio);
       }
     }
     drawClusterLabels(ctx, M, clusters);   // concept-cluster labels (stay up under filters)

@@ -57,7 +57,8 @@ uv run scripts/build_concept_bits.py  # term-doc incidence bitmatrix linking the
 uv run scripts/build_concept_clusters.py  # single-linkage cluster centroids per zoom level (concept map)
 uv run scripts/build_text_clusters.py     # same, for the texts map (with collection mix for labelling)
 # then label clusters via subagents -> apply labels into {concept,text}_clusters.json
-uv run scripts/build_dictionary.py    # NCPED (sc-data) -> site/dictionary.json
+uv run scripts/build_dictionary.py    # NCPED (sc-data) -> site/dictionary.json (reverse-search + prose)
+uv run scripts/build_dict_shards.py   # DPD sharded + DPPN names + concept English glosses
 uv run scripts/build_english_index.py # English-translation search index (vocab + bitmatrix)
 cp artifacts/map.json artifacts/concepts.json artifacts/taxonomy.json artifacts/tree.svg site/
 rsync -avz site/ cherch:~/buddhomics.cherch.org/
