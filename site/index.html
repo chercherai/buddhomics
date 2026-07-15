@@ -81,6 +81,8 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
 #dict .sense{margin:.25rem 0 0;}
 #dict .xr{font-family:system-ui,sans-serif; font-size:.75rem; color:var(--muted);}
 #dict .xr a{color:var(--accent); cursor:pointer; font-style:italic;}
+#dict .xr a.onmap{text-decoration:underline dotted; text-underline-offset:2px;}
+#dict .xr .hint{font-style:normal; color:var(--muted); font-size:.68rem;}
 #dict .empty{color:var(--muted); font-family:system-ui,sans-serif; font-size:.78rem; margin:.1rem 0;}
 #dict .dback{float:right; border:0; background:var(--card); color:var(--muted);
   border-radius:4px; cursor:pointer; padding:.1rem .5rem; font:inherit;
@@ -347,7 +349,9 @@ function dictRestore(){
   else renderDictEntry(dictCur.w);
 }
 const escA = s => esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-const dlink = hw => `<a data-w="${escA(hw)}">${esc(hw)}</a>`;
+// a dotted-underlined link is on the concept map (clicking lights it there);
+// a plain link is dictionary-only (clicking just shows its entry).
+const dlink = hw => `<a data-w="${escA(hw)}"${termOfHeadword(hw) ? ' class="onmap"' : ''}>${esc(hw)}</a>`;
 // map a dictionary headword (lemma) onto a concept-map token if one exists
 function termOfHeadword(hw){
   for (const v of [hw, hw + "ā", hw + "aṁ", hw + "o", hw + "ṁ", hw + "ni",
@@ -562,7 +566,7 @@ const CC = makeMap("cc", "tc", {
         ctx.fillText(p.t, x + r + 3 * devicePixelRatio, y + 3.5 * devicePixelRatio);
       }
     }
-    if (!termMatches) drawClusterLabels(ctx, M, clusters);   // concept-cluster labels
+    drawClusterLabels(ctx, M, clusters);   // concept-cluster labels (stay up under filters)
     ctx.globalAlpha = 1;
   },
 });
@@ -603,7 +607,7 @@ const CD = makeMap("cd", "td", {
         ctx.beginPath(); ctx.arc(x, y, r + 4.5 * devicePixelRatio, 0, 7); ctx.stroke();
       }
     }
-    if (!docMatches) drawClusterLabels(ctx, M, textClusters);   // text-cluster labels
+    drawClusterLabels(ctx, M, textClusters);   // text-cluster labels (stay up under filters)
     ctx.globalAlpha = 1;
   },
 });
@@ -636,6 +640,8 @@ function renderDictSearch(q){
     parts.push(`<div class="xr">headwords: ${hwHits.map(dlink).join(", ")}</div>`);
   if (defHits.length)
     parts.push(`<div class="xr">in definitions: ${defHits.map(dlink).join(", ")}</div>`);
+  if (hwHits.length || defHits.length)
+    parts.push(`<div class="xr"><span class="hint">dotted = also on the concept map</span></div>`);
   if (parts.length) dictEl.innerHTML = backBtn() + parts.join("");
   else dictEl.innerHTML = `${backBtn()}<span class="hw">${esc(q)}</span>
     <p class="empty">no dictionary matches</p>`;
