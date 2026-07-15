@@ -112,6 +112,24 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
 footer{color:var(--muted); font-family:system-ui,sans-serif; font-size:.72rem;
   padding:0 1.2rem 1.6rem; max-width:64rem;}
 footer a{color:var(--accent)}
+
+/* --- responsive: stack the four panels on narrow screens --- */
+@media (max-width: 860px){
+  header{padding:.8rem 1rem .2rem;}
+  .sub{display:none;}
+  #controls{margin:.5rem 1rem 0;}
+  #q{width:100%; max-width:none; flex:1;}
+  #wrap{flex-direction:column; height:auto; margin:.5rem 1rem; gap:.7rem;}
+  #taxo{width:100%; flex:none; max-height:38vh;}
+  .pane{width:100%; flex:none;}
+  .pane canvas{height:64vw; min-height:280px; max-height:420px;}
+  #right{width:100%; max-width:none; min-width:0;}
+  #dict{height:8.5rem;}
+  #reader{height:auto; min-height:60vh;}
+  #legend{padding:.5rem 1rem 1rem;}
+  footer{padding:0 1rem 1.5rem;}
+  .tip{max-width:12rem; font-size:.72rem;}
+}
 </style>
 </head>
 <body>
@@ -132,7 +150,7 @@ footer a{color:var(--accent)}
 </div>
 <div id="wrap">
   <nav id="taxo" aria-label="browse by topic"></nav>
-  <div class="pane"><span class="pl">concepts</span>
+  <div class="pane"><span class="pl">concepts · green = in dictionary</span>
     <canvas id="cc"></canvas><div class="tip" id="tc"></div></div>
   <div class="pane"><span class="pl">texts</span>
     <canvas id="cd"></canvas><div class="tip" id="td"></div></div>
@@ -174,12 +192,16 @@ const GCOLORS = {
 const groupOf = p => p.basket === "vinaya" ? "vinaya"
   : p.basket === "abhidhamma" ? "abhidhamma" : p.nikaya;
 
-let terms = [], docs = [], bits = null, BPR = 0, dict = null;
+let terms = [], docs = [], bits = null, BPR = 0, dict = null, clusters = null;
 let termIdx = new Map();          // term string -> index
 let termMatches = null, docMatches = null;   // Sets of point objects
-let hiddenGroups = new Set(), taxoActive = null;
+let hiddenGroups = new Set(), taxoActive = null, currentDoc = null;
 const statusEl = document.getElementById("status");
 const qEl = document.getElementById("q");
+const DICT_YES = "#3f7d5e", DICT_NO = "#9b9384";   // concept map: in-dictionary vs not
+// a filter (search/taxonomy) restricts picking to matches; a plain click-selection
+// highlights but keeps everything pickable, and a click on empty space clears it.
+const filterActive = () => !!taxoActive || qEl.value.trim() !== "";
 
 Promise.all([
   fetch("concepts.json", {cache:"no-cache"}).then(r => r.json()),
@@ -192,9 +214,20 @@ Promise.all([
   BPR = Math.ceil(docs.length / 8);
   terms.forEach((p, i) => termIdx.set(p.t, i));
   CC.fit(); CD.fit(); CC.resize(); CD.resize();
-  buildLegend(); buildTaxo(tax);
+  buildLegend(); buildTaxo(tax); markHd();
 });
-fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => { dict = d; });
+fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => { dict = d; markHd(); });
+fetch("concept_clusters.json", {cache:"no-cache"}).then(r => r.json())
+  .then(c => { clusters = c; CC.draw(); }).catch(() => {});
+
+// tag each concept term with whether NCPED has an entry (colours the concept map)
+function markHd(){
+  if (!dict || !terms.length) return;
+  for (const p of terms){
+    p.hd = lookupCandidates(p.t.toLowerCase()).some(c => dict[c]);
+  }
+  CC.draw();
+}
 
 let enWords = null, enBits = null, EBPR = 0;
 Promise.all([
@@ -232,7 +265,7 @@ function setStatus(html){
   statusEl.innerHTML = html ? html + '<button onclick="clearSel()">clear</button>' : "";
 }
 function clearSel(){
-  termMatches = null; docMatches = null;
+  termMatches = null; docMatches = null; currentDoc = null;
   if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
   qEl.value = "";
   setStatus(""); CC.draw(); CD.draw(); relitReader();
@@ -251,8 +284,7 @@ function selectTerm(i){
   showDict(p.t);
   CC.draw(); CD.draw(); relitReader();
 }
-let currentDoc = null;   // what's open in the reader, marked on the map
-function selectDoc(p){
+function selectDoc(p){   // currentDoc = what's open in the reader, marked on the map
   currentDoc = p;
   const filtered = !!taxoActive || qEl.value.trim() !== "";
   if (!filtered){
@@ -368,6 +400,7 @@ function makeMap(canvasId, tipId, opts){
     const span = Math.max(Math.max(...xs) - Math.min(...xs),
                           Math.max(...ys) - Math.min(...ys));
     M.view = {cx, cy, k: 0.9 / span, x: 0, y: 0};
+    M.fitK = M.view.k;   // zoom baseline for cluster-label scaling
   };
   M.resize = () => {
     const r = canvas.getBoundingClientRect();
@@ -438,6 +471,7 @@ function makeMap(canvasId, tipId, opts){
     if (moved) return;
     const p = M.hover || M.pick(e.clientX, e.clientY);
     if (p) opts.onClick(p);
+    else if (!filterActive()) clearSel();   // click on empty space clears a selection
   });
   addEventListener("resize", M.resize);
   return M;
@@ -447,7 +481,7 @@ const dimC = () => getComputedStyle(document.documentElement)
 
 const CC = makeMap("cc", "tc", {
   pts: () => terms, px: p => p.x, py: p => p.y,
-  skip: p => termMatches && !termMatches.has(p),
+  skip: p => filterActive() && termMatches && !termMatches.has(p),
   tipHtml: p => `<div class="hd" style="font-style:italic">${p.t}</div>
     <div class="meta">in ${p.df} texts${p.g ? " · " + p.g : ""} · click to commit</div>`,
   onHover: p => { p ? renderDictEntry(p.t.toLowerCase()) : dictRestore(); },
@@ -456,6 +490,12 @@ const CC = makeMap("cc", "tc", {
     const w = M.canvas.width, h = M.canvas.height;
     ctx.clearRect(0, 0, w, h);
     const grey = dimC();
+    const css = getComputedStyle(document.documentElement);
+    const ink = css.getPropertyValue("--ink").trim();
+    const bg = css.getPropertyValue("--bg").trim();
+    const ratio = M.fitK ? M.view.k / M.fitK : 1;
+    // pick cluster-label scale by zoom (coarse -> fine -> individual terms)
+    const lvl = ratio < 1.8 ? 0 : ratio < 4 ? 1 : ratio < 9 ? 2 : -1;
     const visible = [];
     for (const p of terms){
       const [x, y] = M.toScreen(p);
@@ -467,15 +507,41 @@ const CC = makeMap("cc", "tc", {
       const dim = termMatches && !termMatches.has(p);
       const r = Math.min(6, 0.7 + 0.85 * Math.log10(p.df)) * devicePixelRatio
         * (M.hover === p ? 1.6 : 1);
-      ctx.globalAlpha = dim ? 0.45 : (p.g ? 0.95 : 0.5);
-      ctx.fillStyle = dim ? grey : (p.g ? GCOLORS[p.g] : "#9a978f");
+      ctx.globalAlpha = dim ? 0.4 : 0.9;
+      ctx.fillStyle = dim ? grey : (p.hd === false ? DICT_NO : DICT_YES);
       ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-      if (!dim && (visible.length <= 200 || M.hover === p ||
-          (termMatches && termMatches.has(p) && nMatch <= 250))){
-        ctx.globalAlpha = 0.92;
-        ctx.font = `italic ${Math.max(10, 8 + 2*Math.log10(p.df)) * devicePixelRatio}px Georgia, serif`;
-        ctx.fillText(p.t, x + r + 3 * devicePixelRatio, y + 3 * devicePixelRatio);
+      // individual term labels only when deeply zoomed, on hover, or for matches
+      const showTerm = !dim && (lvl === -1 || M.hover === p ||
+        (termMatches && termMatches.has(p) && nMatch <= 250));
+      if (showTerm){
+        ctx.globalAlpha = 0.92; ctx.fillStyle = ink;
+        ctx.font = `italic ${Math.max(12, 10 + 2.4*Math.log10(p.df)) * devicePixelRatio}px Georgia, serif`;
+        ctx.fillText(p.t, x + r + 3 * devicePixelRatio, y + 3.5 * devicePixelRatio);
       }
+    }
+    // cluster summary labels — larger, haloed; drawn biggest-first with greedy
+    // collision avoidance so dense regions thin out instead of overprinting
+    if (lvl >= 0 && clusters && clusters.levels[lvl] && !termMatches){
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.lineJoin = "round";
+      const drawn = [];
+      for (const c of clusters.levels[lvl].clusters){   // already sorted by size desc
+        const [x, y] = M.toScreen(c);
+        if (x < 0 || y < 0 || x > w || y > h) continue;
+        const fs = (13 + Math.min(9, 3 * Math.log10(c.n))) * devicePixelRatio;
+        ctx.font = `600 ${fs}px "Iowan Old Style", Georgia, serif`;
+        const tw = ctx.measureText(c.t).width, th = fs * 1.25;
+        const box = [x - tw/2 - 3, y - th/2, x + tw/2 + 3, y + th/2];
+        if (drawn.some(d => box[0] < d[2] && box[2] > d[0] &&
+                            box[1] < d[3] && box[3] > d[1]))
+          continue;
+        drawn.push(box);
+        ctx.globalAlpha = 0.96;
+        ctx.lineWidth = 4 * devicePixelRatio; ctx.strokeStyle = bg;
+        ctx.strokeText(c.t, x, y);
+        ctx.fillStyle = ink; ctx.fillText(c.t, x, y);
+      }
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
     }
     ctx.globalAlpha = 1;
   },
@@ -483,7 +549,8 @@ const CC = makeMap("cc", "tc", {
 
 const CD = makeMap("cd", "td", {
   pts: () => docs, px: p => p.tx, py: p => p.ty,
-  skip: p => hiddenGroups.has(groupOf(p)) || (docMatches && !docMatches.has(p)),
+  skip: p => hiddenGroups.has(groupOf(p)) ||
+             (filterActive() && docMatches && !docMatches.has(p)),
   tipHtml: p => `<div class="hd">${p.uid}</div>
     <div class="meta">${p.basket} · ${p.subpath || p.nikaya} · ${p.n} segments</div>
     <div class="terms">${p.terms.slice(0,5).join(" · ")}</div>

@@ -54,6 +54,8 @@ uv run scripts/build_concepts.py   # LSA term vectors -> t-SNE concept map with 
 uv run scripts/build_taxonomy.py   # curated People/Beings/Places/Lists -> per-term doc membership
 uv run scripts/build_texts.py      # per-document segment JSON for the reading panel
 uv run scripts/build_concept_bits.py  # term-doc incidence bitmatrix linking the two maps
+uv run scripts/build_concept_clusters.py  # single-linkage cluster centroids per zoom level
+# then label clusters via subagents -> apply_cluster_labels.py
 uv run scripts/build_dictionary.py    # NCPED (sc-data) -> site/dictionary.json
 uv run scripts/build_english_index.py # English-translation search index (vocab + bitmatrix)
 cp artifacts/map.json artifacts/concepts.json artifacts/taxonomy.json artifacts/tree.svg site/
