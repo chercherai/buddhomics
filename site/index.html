@@ -94,7 +94,7 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
 #dict .empty{color:var(--muted); font-family:system-ui,sans-serif; font-size:.78rem; margin:.1rem 0;}
 #dict .dback{float:right; border:0; background:var(--card); color:var(--muted);
   border-radius:4px; cursor:pointer; padding:.1rem .5rem; font:inherit;
-  font-family:system-ui,sans-serif; font-size:.75rem;}
+  font-family:system-ui,sans-serif; font-size:.75rem; user-select:none;}
 #dict .dback:hover{color:var(--accent);}
 #reader{flex:1; min-height:0; border:1px solid var(--rule); border-radius:6px;
   background:var(--bg); display:flex; flex-direction:column;}
@@ -603,16 +603,20 @@ const CC = makeMap("cc", "tc", {
       if (x < -12 || y < -12 || x > w + 12 || y > h + 12) continue;
       visible.push([p, x, y]);
     }
+    const rOf = p => Math.max(2.4, Math.min(6, 0.7 + 0.85 * Math.log10(p.df)))
+      * devicePixelRatio * (M.hover === p ? 1.6 : 1);
+    // dimmed points first, coloured (matching) ones on top so they aren't buried
     for (const [p, x, y] of visible){
-      const dim = termMatches && !termMatches.has(p);
-      const r = Math.max(2.4, Math.min(6, 0.7 + 0.85 * Math.log10(p.df))) * devicePixelRatio
-        * (M.hover === p ? 1.6 : 1);
-      ctx.globalAlpha = dim ? 0.4 : 0.9;
-      ctx.fillStyle = dim ? grey : (p.hd === false ? DICT_NO : DICT_YES);
+      if (!(termMatches && !termMatches.has(p))) continue;
+      ctx.globalAlpha = 0.4; ctx.fillStyle = grey;
+      ctx.beginPath(); ctx.arc(x, y, rOf(p), 0, 7); ctx.fill();
+    }
+    for (const [p, x, y] of visible){
+      if (termMatches && !termMatches.has(p)) continue;
+      const r = rOf(p);
+      ctx.globalAlpha = 0.9; ctx.fillStyle = p.hd === false ? DICT_NO : DICT_YES;
       ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-      // individual term labels only when deeply zoomed (past cluster labels) or on hover
-      const showTerm = !dim && (lvl === -1 || M.hover === p);
-      if (showTerm){
+      if (lvl === -1 || M.hover === p){   // term labels only at deep zoom or hover
         ctx.globalAlpha = 0.92; ctx.fillStyle = ink;
         ctx.font = `italic ${Math.max(12, 10 + 2.4*Math.log10(p.df)) * devicePixelRatio}px Georgia, serif`;
         ctx.fillText(conceptLabel(p), x + r + 3 * devicePixelRatio, y + 3.5 * devicePixelRatio);
@@ -636,15 +640,27 @@ const CD = makeMap("cd", "td", {
     const w = M.canvas.width, h = M.canvas.height;
     ctx.clearRect(0, 0, w, h);
     const grey = dimC();
+    const visible = [];
     for (const p of docs){
       if (hiddenGroups.has(groupOf(p))) continue;
       const [x, y] = M.toScreen(p);
       if (x < -12 || y < -12 || x > w + 12 || y > h + 12) continue;
-      const dim = docMatches && !docMatches.has(p);
-      ctx.globalAlpha = dim ? 0.5 : (M.hover === p ? 1 : 0.85);
-      ctx.fillStyle = dim ? grey : (DCOLORS[groupOf(p)] || "#888");
-      const r = Math.max(2.4, Math.min(6.5, 1 + 0.15 * Math.sqrt(p.n))) * devicePixelRatio
-        * (M.hover === p ? 1.6 : 1);
+      visible.push([p, x, y]);
+    }
+    const rOf = p => Math.max(2.4, Math.min(6.5, 1 + 0.15 * Math.sqrt(p.n)))
+      * devicePixelRatio * (M.hover === p ? 1.6 : 1);
+    // dimmed points first, coloured (matching) ones on top so they aren't buried
+    for (const [p, x, y] of visible){
+      if (!(docMatches && !docMatches.has(p))) continue;
+      ctx.globalAlpha = 0.5; ctx.fillStyle = grey;
+      ctx.beginPath(); ctx.arc(x, y, rOf(p), 0, 7); ctx.fill();
+    }
+    const accent = getComputedStyle(document.documentElement)
+      .getPropertyValue("--accent").trim();
+    for (const [p, x, y] of visible){
+      if (docMatches && !docMatches.has(p)) continue;
+      const r = rOf(p);
+      ctx.globalAlpha = M.hover === p ? 1 : 0.85; ctx.fillStyle = DCOLORS[groupOf(p)] || "#888";
       ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
       if (docMatches && docMatches.has(p) && docMatches.size <= 400){
         ctx.globalAlpha = 0.9; ctx.strokeStyle = DCOLORS[groupOf(p)] || "#888";
@@ -652,9 +668,7 @@ const CD = makeMap("cd", "td", {
         ctx.beginPath(); ctx.arc(x, y, r + 2.5 * devicePixelRatio, 0, 7); ctx.stroke();
       }
       if (p === currentDoc){
-        ctx.globalAlpha = 1;
-        ctx.strokeStyle = getComputedStyle(document.documentElement)
-          .getPropertyValue("--accent").trim();
+        ctx.globalAlpha = 1; ctx.strokeStyle = accent;
         ctx.lineWidth = 1.6 * devicePixelRatio;
         ctx.beginPath(); ctx.arc(x, y, r + 4.5 * devicePixelRatio, 0, 7); ctx.stroke();
       }
