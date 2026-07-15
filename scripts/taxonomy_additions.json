@@ -1,0 +1,1696 @@
+{
+ "People": [
+  {
+   "h": "Great disciples (other)",
+   "terms": [
+    {
+     "t": "Aññā Koṇḍañña",
+     "stems": [
+      "koṇḍañ"
+     ]
+    },
+    {
+     "t": "Puṇṇa Mantāṇiputta",
+     "stems": [
+      "mantāṇiputt"
+     ]
+    },
+    {
+     "t": "Mahākappina",
+     "stems": [
+      "mahākappin",
+      "kappin"
+     ]
+    },
+    {
+     "t": "Revata",
+     "stems": [
+      "revat"
+     ]
+    },
+    {
+     "t": "Nanda",
+     "stems": [
+      "=nando",
+      "=nandassa",
+      "=nandaṁ"
+     ]
+    },
+    {
+     "t": "Aṅgulimāla",
+     "stems": [
+      "aṅgulimāl"
+     ]
+    },
+    {
+     "t": "Bāhiya",
+     "stems": [
+      "bāhiy"
+     ]
+    },
+    {
+     "t": "Raṭṭhapāla",
+     "stems": [
+      "raṭṭhapāl"
+     ]
+    },
+    {
+     "t": "Vaṅgīsa",
+     "stems": [
+      "vaṅgīs"
+     ]
+    },
+    {
+     "t": "Piṇḍola Bhāradvāja",
+     "stems": [
+      "piṇḍol"
+     ]
+    },
+    {
+     "t": "Cunda",
+     "stems": [
+      "cunda"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Nuns",
+   "terms": [
+    {
+     "t": "Khemā",
+     "stems": [
+      "=khemā",
+      "=khemāya",
+      "=khemaṁ"
+     ]
+    },
+    {
+     "t": "Paṭācārā",
+     "stems": [
+      "paṭācār"
+     ]
+    },
+    {
+     "t": "Bhaddā Kāpilānī",
+     "stems": [
+      "kāpilān"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Laywomen",
+   "terms": [
+    {
+     "t": "Mallikā",
+     "stems": [
+      "mallik"
+     ]
+    },
+    {
+     "t": "Sāmāvatī",
+     "stems": [
+      "sāmāvat"
+     ]
+    },
+    {
+     "t": "Ambapālī",
+     "stems": [
+      "ambapāl"
+     ]
+    },
+    {
+     "t": "Sujātā",
+     "stems": [
+      "sujāt"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Lay followers",
+   "terms": [
+    {
+     "t": "Mahānāma",
+     "stems": [
+      "mahānām"
+     ]
+    },
+    {
+     "t": "Hatthaka",
+     "stems": [
+      "hatthak"
+     ]
+    },
+    {
+     "t": "Nakulapitā",
+     "stems": [
+      "nakulapit"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Brahmins & ascetics",
+   "terms": [
+    {
+     "t": "Jāṇussoṇi",
+     "stems": [
+      "jāṇussoṇ"
+     ]
+    },
+    {
+     "t": "Pokkharasāti",
+     "stems": [
+      "pokkharas"
+     ]
+    },
+    {
+     "t": "Caṅkī",
+     "stems": [
+      "caṅkī"
+     ]
+    },
+    {
+     "t": "Todeyya",
+     "stems": [
+      "todeyy"
+     ]
+    },
+    {
+     "t": "Vāseṭṭha",
+     "stems": [
+      "vāseṭṭh"
+     ]
+    }
+   ]
+  }
+ ],
+ "Places": [
+  {
+   "h": "Cities",
+   "terms": [
+    {
+     "t": "Sāketa",
+     "stems": [
+      "sāket"
+     ]
+    },
+    {
+     "t": "Campā",
+     "stems": [
+      "campā"
+     ]
+    },
+    {
+     "t": "Kusinārā",
+     "stems": [
+      "kusinār"
+     ]
+    },
+    {
+     "t": "Pāvā",
+     "stems": [
+      "pāvā"
+     ]
+    },
+    {
+     "t": "Nālandā",
+     "stems": [
+      "nāland"
+     ]
+    },
+    {
+     "t": "Āḷavī",
+     "stems": [
+      "āḷavī",
+      "āḷaviy"
+     ]
+    },
+    {
+     "t": "Ukkaṭṭhā",
+     "stems": [
+      "ukkaṭṭh"
+     ]
+    },
+    {
+     "t": "Uruvelā",
+     "stems": [
+      "uruvel"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Parks, groves & halls",
+   "terms": [
+    {
+     "t": "Ghositārāma",
+     "stems": [
+      "ghositārām"
+     ]
+    },
+    {
+     "t": "Añjanavana",
+     "stems": [
+      "añjanavan"
+     ]
+    },
+    {
+     "t": "Andhavana",
+     "stems": [
+      "andhavan"
+     ]
+    },
+    {
+     "t": "Sītavana",
+     "stems": [
+      "sītavan"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Mountains",
+   "terms": [
+    {
+     "t": "Isigili",
+     "stems": [
+      "isigil"
+     ]
+    },
+    {
+     "t": "Himavā",
+     "stems": [
+      "himav"
+     ]
+    },
+    {
+     "t": "Sineru",
+     "stems": [
+      "sineru"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Rivers",
+   "terms": [
+    {
+     "t": "Gaṅgā",
+     "stems": [
+      "gaṅgā"
+     ]
+    },
+    {
+     "t": "Nerañjarā",
+     "stems": [
+      "nerañjar"
+     ]
+    },
+    {
+     "t": "Aciravatī",
+     "stems": [
+      "aciravat"
+     ]
+    },
+    {
+     "t": "Yamunā",
+     "stems": [
+      "yamunā"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Regions",
+   "terms": [
+    {
+     "t": "Kāsi",
+     "stems": [
+      "kāsi",
+      "kāsī"
+     ]
+    },
+    {
+     "t": "Kuru",
+     "stems": [
+      "kuru",
+      "kurū"
+     ]
+    },
+    {
+     "t": "Avanti",
+     "stems": [
+      "avant"
+     ]
+    },
+    {
+     "t": "Videha",
+     "stems": [
+      "videh"
+     ]
+    },
+    {
+     "t": "Malla",
+     "stems": [
+      "mallā",
+      "mallān"
+     ]
+    },
+    {
+     "t": "Gandhāra",
+     "stems": [
+      "gandhār"
+     ]
+    }
+   ]
+  }
+ ],
+ "Beings": [
+  {
+   "h": "Devas & brahmās",
+   "terms": [
+    {
+     "t": "Brahmā Sahampati",
+     "stems": [
+      "sahampat"
+     ]
+    },
+    {
+     "t": "Baka Brahmā",
+     "stems": [
+      "=bako",
+      "=bakassa",
+      "=bakaṁ",
+      "bakabrahm"
+     ]
+    },
+    {
+     "t": "Brahmā Sanaṅkumāra",
+     "stems": [
+      "sanaṅkumār"
+     ]
+    },
+    {
+     "t": "Mahābrahmā",
+     "stems": [
+      "mahābrahm"
+     ]
+    },
+    {
+     "t": "Ābhassarā (radiant gods)",
+     "stems": [
+      "ābhassar"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Deva realms & hosts",
+   "terms": [
+    {
+     "t": "Cātumahārājika devas",
+     "stems": [
+      "cātumahārāj",
+      "catumahārāj"
+     ]
+    },
+    {
+     "t": "Four Great Kings",
+     "stems": [
+      "dhataraṭṭh",
+      "virūḷhak",
+      "virūpakkh",
+      "vessavaṇ",
+      "kuver"
+     ]
+    },
+    {
+     "t": "Tāvatiṁsa gods",
+     "stems": [
+      "tāvatiṁs",
+      "tidas"
+     ]
+    },
+    {
+     "t": "Yāma devas",
+     "stems": [
+      "=yāmā",
+      "=yāmānaṁ",
+      "suyām"
+     ]
+    },
+    {
+     "t": "Tusita gods",
+     "stems": [
+      "tusit",
+      "santusit"
+     ]
+    },
+    {
+     "t": "Nimmānarati & Paranimmitavasavattī gods",
+     "stems": [
+      "nimmānarat",
+      "sunimmit",
+      "paranimmitavasavatt",
+      "vasavatt"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Spirits & animals",
+   "terms": [
+    {
+     "t": "Kumbhaṇḍas",
+     "stems": [
+      "kumbhaṇḍ"
+     ]
+    },
+    {
+     "t": "Supaṇṇas / Garuḷas",
+     "stems": [
+      "supaṇṇ",
+      "garuḷ"
+     ]
+    },
+    {
+     "t": "Kinnaras / Kimpurisas",
+     "stems": [
+      "kinnar",
+      "kimpuris"
+     ]
+    },
+    {
+     "t": "Rakkhasas & Pisācas",
+     "stems": [
+      "rakkhas",
+      "pisāc"
+     ]
+    },
+    {
+     "t": "Named yakkhas (Āḷavaka, Sātāgira, Hemavata)",
+     "stems": [
+      "āḷavak",
+      "sātāgir",
+      "hemavat"
+     ]
+    }
+   ]
+  }
+ ],
+ "Cosmology": [
+  {
+   "h": "Planes of existence",
+   "terms": [
+    {
+     "t": "Niraya (hell realm)",
+     "stems": [
+      "niray"
+     ]
+    },
+    {
+     "t": "Tiracchānayoni (animal realm)",
+     "stems": [
+      "tiracchān"
+     ]
+    },
+    {
+     "t": "Pettivisaya / Petaloka (ghost realm)",
+     "stems": [
+      "pettivisay",
+      "petalok"
+     ]
+    },
+    {
+     "t": "Apāya, duggati, vinipāta (lower realms)",
+     "stems": [
+      "apāy",
+      "duggati",
+      "vinipāt"
+     ]
+    },
+    {
+     "t": "Manussaloka & sagga (human & heaven)",
+     "stems": [
+      "manussalok",
+      "sagga"
+     ]
+    },
+    {
+     "t": "Three realms (kāma, rūpa, arūpa)",
+     "stems": [
+      "kāmadhāt",
+      "rūpadhāt",
+      "arūpadhāt",
+      "kāmāvacar"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Hells (niraya)",
+   "terms": [
+    {
+     "t": "Avīci (great hell)",
+     "stems": [
+      "avīci"
+     ]
+    },
+    {
+     "t": "Eight great hells",
+     "stems": [
+      "sañjīv",
+      "kāḷasutt",
+      "saṅghāt",
+      "roruv",
+      "mahāroruv",
+      "tāpan",
+      "patāpan"
+     ]
+    },
+    {
+     "t": "Period hells (Abbuda etc.)",
+     "stems": [
+      "abbud",
+      "nirabbud"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Heavens",
+   "terms": [
+    {
+     "t": "Tāvatiṁsa heaven (Nandana, Sudhammā)",
+     "stems": [
+      "tāvatiṁs",
+      "sudhammā",
+      "vejayant"
+     ]
+    },
+    {
+     "t": "Brahmaloka (brahmā realms)",
+     "stems": [
+      "brahmalok",
+      "brahmakāyik",
+      "brahmapārisajj",
+      "brahmapurohit"
+     ]
+    },
+    {
+     "t": "Higher brahmā realms (Subhakiṇha, Vehapphala, Suddhāvāsa)",
+     "stems": [
+      "subhakiṇh",
+      "vehapphal",
+      "suddhāvās",
+      "akaniṭṭh",
+      "asaññasatt"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Eons & world-cycles",
+   "terms": [
+    {
+     "t": "Kappa (eon)",
+     "stems": [
+      "mahākapp",
+      "saṁvaṭṭakapp",
+      "antarakapp",
+      "asaṅkheyy",
+      "kappasahass"
+     ]
+    },
+    {
+     "t": "World contraction & expansion",
+     "stems": [
+      "saṁvaṭṭ",
+      "vivaṭṭ",
+      "saṁvaṭṭamān",
+      "vivaṭṭamān"
+     ]
+    },
+    {
+     "t": "World-systems (lokadhātu, cakkavāḷa)",
+     "stems": [
+      "lokadhāt",
+      "cakkavāḷ",
+      "sahassilokadhāt",
+      "dasasahass"
+     ]
+    },
+    {
+     "t": "Sineru & the continents (Jambudīpa, Uttarakuru)",
+     "stems": [
+      "sineru",
+      "meru",
+      "jambudīp",
+      "uttarakur",
+      "himavant",
+      "mahāsamudd"
+     ]
+    }
+   ]
+  }
+ ],
+ "Numbered Lists": [
+  {
+   "h": "Sense bases & elements",
+   "terms": [
+    {
+     "t": "Six sense bases",
+     "stems": [
+      "saḷāyatan",
+      "āyatan"
+     ]
+    },
+    {
+     "t": "Eighteen elements",
+     "stems": [
+      "dhātu"
+     ]
+    },
+    {
+     "t": "Four great elements",
+     "stems": [
+      "pathav",
+      "=āpo",
+      "=tejo",
+      "=vāyo"
+     ]
+    },
+    {
+     "t": "Contact",
+     "stems": [
+      "phass"
+     ]
+    },
+    {
+     "t": "Three kinds of feeling",
+     "stems": [
+      "somanass",
+      "domanass",
+      "adukkhamasukh"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Ethical trainings",
+   "terms": [
+    {
+     "t": "Virtue & five precepts",
+     "stems": [
+      "sīl",
+      "pañcasīl"
+     ]
+    },
+    {
+     "t": "Ten courses of action",
+     "stems": [
+      "kammapath"
+     ]
+    },
+    {
+     "t": "Eight worldly conditions",
+     "stems": [
+      "lokadhamm"
+     ]
+    },
+    {
+     "t": "Four postures",
+     "stems": [
+      "iriyāpath"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Perfections & analyses",
+   "terms": [
+    {
+     "t": "Ten perfections",
+     "stems": [
+      "pāram"
+     ]
+    },
+    {
+     "t": "Four analytical knowledges",
+     "stems": [
+      "paṭisambhid"
+     ]
+    },
+    {
+     "t": "Six recollections",
+     "stems": [
+      "anussati"
+     ]
+    },
+    {
+     "t": "Four nutriments",
+     "stems": [
+      "āhār"
+     ]
+    },
+    {
+     "t": "Three characteristics",
+     "stems": [
+      "anicc",
+      "anatt"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Latent tendencies & floods",
+   "terms": [
+    {
+     "t": "Seven latent tendencies",
+     "stems": [
+      "anusay"
+     ]
+    },
+    {
+     "t": "Four floods",
+     "stems": [
+      "ogha"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Types of persons",
+   "terms": [
+    {
+     "t": "Four noble individuals",
+     "stems": [
+      "ariyapuggal",
+      "sotāpann",
+      "sakadāgām",
+      "anāgām",
+      "arahat"
+     ]
+    }
+   ]
+  }
+ ],
+ "Doctrine & Mind": [
+  {
+   "h": "Wholesome & unwholesome roots",
+   "terms": [
+    {
+     "t": "Three unwholesome roots",
+     "stems": [
+      "lobha",
+      "dosa",
+      "moha"
+     ]
+    },
+    {
+     "t": "Three wholesome roots",
+     "stems": [
+      "alobh",
+      "adosa",
+      "amoha"
+     ]
+    },
+    {
+     "t": "Greed & lust",
+     "stems": [
+      "rāga"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Mental factors",
+   "terms": [
+    {
+     "t": "Mind",
+     "stems": [
+      "citta"
+     ]
+    },
+    {
+     "t": "Mental factors",
+     "stems": [
+      "cetasik"
+     ]
+    },
+    {
+     "t": "Wholesome & unwholesome",
+     "stems": [
+      "kusal",
+      "akusal"
+     ]
+    },
+    {
+     "t": "Mental proliferation",
+     "stems": [
+      "papañc"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Kamma & rebirth",
+   "terms": [
+    {
+     "t": "Kamma & its result",
+     "stems": [
+      "kamma",
+      "vipāk"
+     ]
+    },
+    {
+     "t": "Rebirth-linking",
+     "stems": [
+      "paṭisandh"
+     ]
+    },
+    {
+     "t": "Renewed existence",
+     "stems": [
+      "punabbhav"
+     ]
+    },
+    {
+     "t": "Wandering-on",
+     "stems": [
+      "saṁsār"
+     ]
+    },
+    {
+     "t": "Ignorance & true knowledge",
+     "stems": [
+      "avijjā",
+      "vijjā"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Views",
+   "terms": [
+    {
+     "t": "Views",
+     "stems": [
+      "diṭṭh"
+     ]
+    },
+    {
+     "t": "Identity view",
+     "stems": [
+      "sakkāyadiṭṭh"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Nibbāna & the unconditioned",
+   "terms": [
+    {
+     "t": "Nibbāna",
+     "stems": [
+      "nibbān",
+      "nibbāy"
+     ]
+    },
+    {
+     "t": "The unconditioned",
+     "stems": [
+      "asaṅkhat"
+     ]
+    },
+    {
+     "t": "Liberation",
+     "stems": [
+      "vimutt",
+      "vimucc"
+     ]
+    },
+    {
+     "t": "The deathless",
+     "stems": [
+      "amata"
+     ]
+    }
+   ]
+  }
+ ],
+ "Rhetoric": [
+  {
+   "h": "Openings & formulas",
+   "terms": [
+    {
+     "t": "On one occasion",
+     "stems": [
+      "~ekaṁ samayaṁ"
+     ]
+    },
+    {
+     "t": "And then… (narrative)",
+     "stems": [
+      "~atha kho"
+     ]
+    },
+    {
+     "t": "At that time",
+     "stems": [
+      "~tena kho pana samayena"
+     ]
+    },
+    {
+     "t": "Sat down to one side",
+     "stems": [
+      "~ekamantaṁ nisīdi"
+     ]
+    },
+    {
+     "t": "Exchanged greetings",
+     "stems": [
+      "sammodanīyaṁ",
+      "~sammodanīyaṁ kathaṁ"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Modes of address",
+   "terms": [
+    {
+     "t": "Mate (samma)",
+     "stems": [
+      "=samma"
+     ]
+    },
+    {
+     "t": "My dear (tāta)",
+     "stems": [
+      "tāta"
+     ]
+    },
+    {
+     "t": "Sir (bho, to Gotama)",
+     "stems": [
+      "=bho"
+     ]
+    },
+    {
+     "t": "Worthy sir (bhavaṁ)",
+     "stems": [
+      "=bhavaṁ"
+     ]
+    },
+    {
+     "t": "Master (ayya)",
+     "stems": [
+      "ayya"
+     ]
+    },
+    {
+     "t": "Hey there! (ambho, rebuke)",
+     "stems": [
+      "ambho"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Praise & approval",
+   "terms": [
+    {
+     "t": "Said this (etadavoca)",
+     "stems": [
+      "etadavoca"
+     ]
+    },
+    {
+     "t": "Was delighted (abhinandi)",
+     "stems": [
+      "abhinand"
+     ]
+    },
+    {
+     "t": "Elated / uplifted (attamano)",
+     "stems": [
+      "attaman"
+     ]
+    },
+    {
+     "t": "Good, good! (sādhu sādhu)",
+     "stems": [
+      "~sādhu sādhu"
+     ]
+    },
+    {
+     "t": "Bowed and departed",
+     "stems": [
+      "abhivādetvā",
+      "padakkhiṇaṁ"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Stock pericopes",
+   "terms": [
+    {
+     "t": "Gradual instruction (anupubbikathā)",
+     "stems": [
+      "anupubbi"
+     ]
+    },
+    {
+     "t": "Asking leave (okāsa)",
+     "stems": [
+      "okāsa"
+     ]
+    },
+    {
+     "t": "“Come, monk” ordination (ehi bhikkhu)",
+     "stems": [
+      "~ehi bhikkhu"
+     ]
+    },
+    {
+     "t": "In this very life (diṭṭhadhamma)",
+     "stems": [
+      "diṭṭhadhamm",
+      "~diṭṭheva dhamme"
+     ]
+    },
+    {
+     "t": "Disenchantment → dispassion",
+     "stems": [
+      "nibbind",
+      "virajj"
+     ]
+    },
+    {
+     "t": "Arahant's declaration (khīṇā jāti…)",
+     "stems": [
+      "~khīṇā jāti",
+      "~kataṁ karaṇīyaṁ",
+      "~vusitaṁ brahmacariyaṁ"
+     ]
+    },
+    {
+     "t": "Spiritual life (brahmacariya)",
+     "stems": [
+      "brahmacariy"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Nature imagery",
+   "terms": [
+    {
+     "t": "Fire (aggi)",
+     "stems": [
+      "aggikkhandh",
+      "=aggi",
+      "=aggiṁ",
+      "=agginā"
+     ]
+    },
+    {
+     "t": "Water & rivers (udaka, nadī)",
+     "stems": [
+      "udaka",
+      "nadī"
+     ]
+    },
+    {
+     "t": "Ocean (samudda)",
+     "stems": [
+      "samudda"
+     ]
+    },
+    {
+     "t": "Lotus (paduma, puṇḍarīka)",
+     "stems": [
+      "paduma",
+      "puṇḍarīk"
+     ]
+    },
+    {
+     "t": "Rain cloud (megha)",
+     "stems": [
+      "megha",
+      "~deve vassante"
+     ]
+    },
+    {
+     "t": "Moon (candimā)",
+     "stems": [
+      "candim"
+     ]
+    },
+    {
+     "t": "Sun (sūriya)",
+     "stems": [
+      "sūriya"
+     ]
+    },
+    {
+     "t": "Mountain (pabbata)",
+     "stems": [
+      "pabbat"
+     ]
+    },
+    {
+     "t": "Gold (suvaṇṇa)",
+     "stems": [
+      "suvaṇṇ"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Similes",
+   "terms": [
+    {
+     "t": "Raft (kulla)",
+     "stems": [
+      "kulla"
+     ]
+    },
+    {
+     "t": "Arrow (salla)",
+     "stems": [
+      "=sallaṁ",
+      "sallena"
+     ]
+    },
+    {
+     "t": "Viper (āsīvisa)",
+     "stems": [
+      "āsīvis"
+     ]
+    },
+    {
+     "t": "Elephant (hatthi)",
+     "stems": [
+      "hatthi"
+     ]
+    },
+    {
+     "t": "Ploughing / farmer (kassaka)",
+     "stems": [
+      "kassaka",
+      "kasibhāra"
+     ]
+    },
+    {
+     "t": "Lamp (padīpa)",
+     "stems": [
+      "padīp"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Verse & debate",
+   "terms": [
+    {
+     "t": "What do you think? (taṁ kiṁ maññasi)",
+     "stems": [
+      "~taṁ kiṁ maññasi"
+     ]
+    },
+    {
+     "t": "Certainly not (no hidaṁ)",
+     "stems": [
+      "~no hidaṁ",
+      "~no hetaṁ"
+     ]
+    },
+    {
+     "t": "Well then… (tena hi)",
+     "stems": [
+      "~tena hi"
+     ]
+    },
+    {
+     "t": "So it is that… (iti kho)",
+     "stems": [
+      "~iti kho"
+     ]
+    },
+    {
+     "t": "Yes, sir (evaṁ, bhante)",
+     "stems": [
+      "~evaṁ, bhante"
+     ]
+    }
+   ]
+  }
+ ],
+ "Abhidhamma": [
+  {
+   "h": "The 24 conditions (paccaya)",
+   "terms": [
+    {
+     "t": "Condition (paccaya)",
+     "stems": [
+      "paccay"
+     ]
+    },
+    {
+     "t": "Root condition (hetu)",
+     "stems": [
+      "hetupaccay"
+     ]
+    },
+    {
+     "t": "Object condition (ārammaṇa)",
+     "stems": [
+      "ārammaṇapaccay",
+      "ārammaṇādhipati"
+     ]
+    },
+    {
+     "t": "Predominance (adhipati)",
+     "stems": [
+      "adhipatipaccay"
+     ]
+    },
+    {
+     "t": "Proximity & contiguity",
+     "stems": [
+      "anantarapaccay",
+      "samanantarapaccay"
+     ]
+    },
+    {
+     "t": "Conascence & mutuality",
+     "stems": [
+      "sahajātapaccay",
+      "aññamaññapaccay"
+     ]
+    },
+    {
+     "t": "Support & decisive support",
+     "stems": [
+      "nissayapaccay",
+      "upanissayapaccay"
+     ]
+    },
+    {
+     "t": "Pre- & post-nascence",
+     "stems": [
+      "purejātapaccay",
+      "pacchājātapaccay"
+     ]
+    },
+    {
+     "t": "Repetition (āsevana)",
+     "stems": [
+      "āsevanapaccay"
+     ]
+    },
+    {
+     "t": "Kamma & result",
+     "stems": [
+      "kammapaccay",
+      "vipākapaccay"
+     ]
+    },
+    {
+     "t": "Nutriment & faculty",
+     "stems": [
+      "āhārapaccay",
+      "indriyapaccay"
+     ]
+    },
+    {
+     "t": "Jhāna & path",
+     "stems": [
+      "jhānapaccay",
+      "maggapaccay"
+     ]
+    },
+    {
+     "t": "Associated & dissociated",
+     "stems": [
+      "sampayuttapaccay",
+      "vippayuttapaccay"
+     ]
+    },
+    {
+     "t": "Presence & absence",
+     "stems": [
+      "atthipaccay",
+      "natthipaccay",
+      "vigatapaccay",
+      "avigatapaccay"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Mātikā & analysis",
+   "terms": [
+    {
+     "t": "The matrix (mātikā)",
+     "stems": [
+      "mātikā",
+      "mātik"
+     ]
+    },
+    {
+     "t": "Triads & dyads (tika/duka)",
+     "stems": [
+      "tika",
+      "duka"
+     ]
+    },
+    {
+     "t": "Analysis (vibhaṅga)",
+     "stems": [
+      "vibhaṅg"
+     ]
+    },
+    {
+     "t": "Concept (paññatti)",
+     "stems": [
+      "paññatt"
+     ]
+    },
+    {
+     "t": "Wholesome states",
+     "stems": [
+      "~kusalā dhammā"
+     ]
+    },
+    {
+     "t": "Unwholesome states",
+     "stems": [
+      "~akusalā dhammā"
+     ]
+    },
+    {
+     "t": "Indeterminate states",
+     "stems": [
+      "~abyākatā dhammā"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Debated points",
+   "terms": [
+    {
+     "t": "Points of controversy (Kathāvatthu)",
+     "stems": [
+      "kathāvatth"
+     ]
+    },
+    {
+     "t": "Elements discussion (Dhātukathā)",
+     "stems": [
+      "dhātukath"
+     ]
+    },
+    {
+     "t": "Pairs (Yamaka)",
+     "stems": [
+      "yamaka"
+     ]
+    },
+    {
+     "t": "Persons described (Puggalapaññatti)",
+     "stems": [
+      "puggalapaññatt"
+     ]
+    }
+   ]
+  }
+ ],
+ "Vinaya": [
+  {
+   "h": "Classes of offense",
+   "terms": [
+    {
+     "t": "Defeat (pārājika)",
+     "stems": [
+      "pārājik"
+     ]
+    },
+    {
+     "t": "Formal meeting (saṅghādisesa)",
+     "stems": [
+      "saṅghādises"
+     ]
+    },
+    {
+     "t": "Undetermined (aniyata)",
+     "stems": [
+      "aniyata"
+     ]
+    },
+    {
+     "t": "Forfeiture (nissaggiya pācittiya)",
+     "stems": [
+      "nissaggiy"
+     ]
+    },
+    {
+     "t": "Confession (pācittiya)",
+     "stems": [
+      "pācittiy"
+     ]
+    },
+    {
+     "t": "Acknowledgement (pāṭidesanīya)",
+     "stems": [
+      "pāṭidesanīy"
+     ]
+    },
+    {
+     "t": "Training (sekhiya)",
+     "stems": [
+      "sekhiya"
+     ]
+    },
+    {
+     "t": "Settling disputes (adhikaraṇasamatha)",
+     "stems": [
+      "adhikaraṇasamath",
+      "adhikaraṇ"
+     ]
+    },
+    {
+     "t": "Offense (āpatti)",
+     "stems": [
+      "āpatti"
+     ]
+    },
+    {
+     "t": "Training rule (sikkhāpada)",
+     "stems": [
+      "sikkhāpad"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Procedures & communal acts",
+   "terms": [
+    {
+     "t": "Code recitation (pātimokkha)",
+     "stems": [
+      "pātimokkh"
+     ]
+    },
+    {
+     "t": "Observance day (uposatha)",
+     "stems": [
+      "uposath"
+     ]
+    },
+    {
+     "t": "Invitation (pavāraṇā)",
+     "stems": [
+      "pavāraṇ"
+     ]
+    },
+    {
+     "t": "Kaṭhina ceremony",
+     "stems": [
+      "kaṭhin"
+     ]
+    },
+    {
+     "t": "Boundary (sīmā)",
+     "stems": [
+      "sīmā",
+      "sīmaṁ"
+     ]
+    },
+    {
+     "t": "Communal act (saṅghakamma)",
+     "stems": [
+      "saṅghakamm"
+     ]
+    },
+    {
+     "t": "Going forth & ordination",
+     "stems": [
+      "pabbajj",
+      "upasampad"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Requisites & robes",
+   "terms": [
+    {
+     "t": "Robe (cīvara)",
+     "stems": [
+      "cīvar"
+     ]
+    },
+    {
+     "t": "Almsfood (piṇḍapāta)",
+     "stems": [
+      "piṇḍapāt"
+     ]
+    },
+    {
+     "t": "Lodging (senāsana)",
+     "stems": [
+      "senāsan"
+     ]
+    },
+    {
+     "t": "Nuns (bhikkhunī)",
+     "stems": [
+      "bhikkhun"
+     ]
+    },
+    {
+     "t": "Heavy rules (garudhamma)",
+     "stems": [
+      "garudhamm"
+     ]
+    }
+   ]
+  }
+ ],
+ "Narrative & Verse": [
+  {
+   "h": "Past lives & heroes",
+   "terms": [
+    {
+     "t": "Birth stories (Jātaka)",
+     "stems": [
+      "jātaka"
+     ]
+    },
+    {
+     "t": "Bodhisatta",
+     "stems": [
+      "bodhisatt"
+     ]
+    },
+    {
+     "t": "Life-stories (Apadāna)",
+     "stems": [
+      "apadān"
+     ]
+    },
+    {
+     "t": "Past deeds (pubbakamma)",
+     "stems": [
+      "pubbakamm"
+     ]
+    },
+    {
+     "t": "Chronicle of Buddhas (Buddhavaṁsa)",
+     "stems": [
+      "buddhavaṁs"
+     ]
+    },
+    {
+     "t": "Conduct (Cariyāpiṭaka)",
+     "stems": [
+      "cariyāpiṭak",
+      "cariyā"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Verses of elders",
+   "terms": [
+    {
+     "t": "Verses of elder monks (Theragāthā)",
+     "stems": [
+      "theragāth"
+     ]
+    },
+    {
+     "t": "Verses of elder nuns (Therīgāthā)",
+     "stems": [
+      "therīgāth"
+     ]
+    },
+    {
+     "t": "Elder monk (thera)",
+     "stems": [
+      "thera"
+     ]
+    },
+    {
+     "t": "Elder nun (therī)",
+     "stems": [
+      "therī"
+     ]
+    }
+   ]
+  },
+  {
+   "h": "Ghost & heaven stories",
+   "terms": [
+    {
+     "t": "Ghost stories (Petavatthu)",
+     "stems": [
+      "petavatth",
+      "peta"
+     ]
+    },
+    {
+     "t": "Heavenly mansions (Vimānavatthu)",
+     "stems": [
+      "vimānavatth",
+      "vimāna"
+     ]
+    },
+    {
+     "t": "Origin story (nidāna)",
+     "stems": [
+      "nidān"
+     ]
+    },
+    {
+     "t": "Past Buddhas",
+     "stems": [
+      "dīpaṅkar",
+      "=vipassī",
+      "vipassiss",
+      "koṇāgaman",
+      "kakusandh"
+     ]
+    }
+   ]
+  }
+ ]
+}

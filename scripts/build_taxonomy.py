@@ -265,6 +265,31 @@ def main() -> None:
             node["subs"].append(snode)
         tree.append(node)
 
+    # merge subagent-curated additions (stems pre-validated against the corpus in
+    # taxonomy_additions.json): extend existing categories/subgroups by name, and
+    # append new categories (Cosmology, Doctrine & Mind, Abhidhamma, Vinaya, …)
+    add_path = REPO / "scripts" / "taxonomy_additions.json"
+    if add_path.exists():
+        node_by_h = {n["h"]: n for n in tree}
+        for cat, subs in json.loads(add_path.read_text()).items():
+            node = node_by_h.get(cat)
+            if node is None:
+                node = {"h": cat, "subs": []}
+                tree.append(node)
+                node_by_h[cat] = node
+            sub_by_h = {s["h"]: s for s in node["subs"]}
+            for sub in subs:
+                snode = sub_by_h.get(sub["h"])
+                if snode is None:
+                    snode = {"h": sub["h"], "terms": []}
+                    node["subs"].append(snode)
+                    sub_by_h[sub["h"]] = snode
+                for term in sub["terms"]:
+                    d = docs_for(term["stems"])
+                    if d:
+                        snode["terms"].append(
+                            {"t": term["t"], "docs": d, "stems": term["stems"]})
+
     # ---- Translations: language availability + who produced the English ----
     MACHINE = {"claude-fable-5", "gpt-5.6-sol"}
     TR_NAMES = {"sujato": "Bhikkhu Sujato", "brahmali": "Bhikkhu Brahmali",
