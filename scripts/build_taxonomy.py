@@ -299,12 +299,14 @@ def main() -> None:
                 "soma": "Bhikkhu Soma", "suddhaso": "Bhikkhu Suddhāso",
                 "patton": "Charles Patton", "anandajoti": "Bhikkhu Ānandajoti",
                 "claude-fable-5": "Claude Fable 5", "gpt-5.6-sol": "GPT-5.6"}
+    # categorize by every AVAILABLE translator (not just the doc's primary), so
+    # alternate sc-data humans and the GPT fallback both surface; a doc appears
+    # under each translator that has a version of it
     docmeta = pl.read_parquet(A / "documents.parquet")
-    uid_tr = dict(docmeta.select("uid", "translator").iter_rows())
+    uid_trs = dict(docmeta.select("uid", "translators").iter_rows())
     tr_docs: dict[str, list[int]] = {}
     for i, u in enumerate(uids):
-        t = uid_tr.get(u)
-        if t:
+        for t in (uid_trs.get(u) or []):
             tr_docs.setdefault(t, []).append(i)
     human = sorted(((t, d) for t, d in tr_docs.items() if t not in MACHINE),
                    key=lambda kv: -len(kv[1]))
