@@ -270,6 +270,21 @@ function wordClick(w){
 
 // ---- dictionary ----
 const dictEl = document.getElementById("dict");
+dictEl.addEventListener("click", e => {
+  const a = e.target.closest("a[data-w]");
+  if (a) wordClick(a.dataset.w);
+});
+const escA = s => esc(s).replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+const dlink = hw => `<a data-w="${escA(hw)}">${esc(hw)}</a>`;
+// map a dictionary headword (lemma) onto a concept-map token if one exists
+function termOfHeadword(hw){
+  for (const v of [hw, hw + "ā", hw + "aṁ", hw + "o", hw + "ṁ", hw + "ni",
+                   hw.slice(0, -1) + "ā"]){
+    const i = termIdx.get(v);
+    if (i !== undefined) return terms[i];
+  }
+  return null;
+}
 function lookupCandidates(w){
   const c = [w];
   if (w.endsWith("ṁ")) c.push(w.slice(0, -1), w.slice(0, -1) + "a");
@@ -298,8 +313,7 @@ function showDict(word){
   }
   const senses = dict[hw].map(s => `<div class="sense">
     ${s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}
-    ${s.x ? `<div class="xr">see: ${s.x.map(x =>
-      `<a onclick="showDict('${esc(x)}')">${esc(x)}</a>`).join(", ")}</div>` : ""}
+    ${s.x ? `<div class="xr">see: ${s.x.map(dlink).join(", ")}</div>` : ""}
   </div>`).join("");
   dictEl.innerHTML = `<span class="hw">${esc(hw)}</span>
     ${hw !== w ? `<span class="via">← ${esc(w)}</span>` : ""}${senses}`;
@@ -460,7 +474,7 @@ const CD = makeMap("cd", "td", {
 
 // ---- search ----
 function searchDict(q){
-  if (!dict) return;
+  if (!dict) return [];
   let entryHw = null;
   for (const cand of lookupCandidates(q)){
     if (dict[cand]){ entryHw = cand; break; }
@@ -472,7 +486,6 @@ function searchDict(q){
         dict[hw].some(s => s.d && s.d.toLowerCase().includes(q))) defHits.push(hw);
     if (hwHits.length >= 10 && defHits.length >= 12) break;
   }
-  const link = hw => `<a onclick="wordClick('${esc(hw)}')">${esc(hw)}</a>`;
   const parts = [];
   if (entryHw){
     const senses = dict[entryHw].map(s => `<div class="sense">
@@ -480,12 +493,13 @@ function searchDict(q){
     parts.push(`<span class="hw">${esc(entryHw)}</span>${senses}`);
   }
   if (hwHits.length)
-    parts.push(`<div class="xr">headwords: ${hwHits.map(link).join(", ")}</div>`);
+    parts.push(`<div class="xr">headwords: ${hwHits.map(dlink).join(", ")}</div>`);
   if (defHits.length)
-    parts.push(`<div class="xr">in definitions: ${defHits.map(link).join(", ")}</div>`);
+    parts.push(`<div class="xr">in definitions: ${defHits.map(dlink).join(", ")}</div>`);
   if (parts.length) dictEl.innerHTML = parts.join("");
   else dictEl.innerHTML = `<span class="hw">${esc(q)}</span>
     <p class="empty">no dictionary matches</p>`;
+  return entryHw ? [entryHw, ...hwHits, ...defHits] : [...hwHits, ...defHits];
 }
 qEl.addEventListener("input", () => {
   if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
@@ -500,8 +514,12 @@ qEl.addEventListener("input", () => {
   termMatches = new Set(terms.filter(p => p.t.includes(q)));
   const enNote = docMatches.size > nPali
     ? ` (${docMatches.size - nPali} via English)` : "";
+  // dictionary hits (headwords + definition matches) join the concept highlight
+  for (const hw of searchDict(q)){
+    const p = termOfHeadword(hw);
+    if (p) termMatches.add(p);
+  }
   setStatus(`<b>${docMatches.size}</b> texts${enNote} · <b>${termMatches.size}</b> terms match “${esc(q)}”`);
-  searchDict(q);
   CC.draw(); CD.draw();
 });
 qEl.addEventListener("keydown", e => {
