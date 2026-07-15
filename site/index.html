@@ -603,7 +603,6 @@ const CC = makeMap("cc", "tc", {
       if (x < -12 || y < -12 || x > w + 12 || y > h + 12) continue;
       visible.push([p, x, y]);
     }
-    const nMatch = termMatches ? visible.filter(([p]) => termMatches.has(p)).length : 0;
     for (const [p, x, y] of visible){
       const dim = termMatches && !termMatches.has(p);
       const r = Math.max(2.4, Math.min(6, 0.7 + 0.85 * Math.log10(p.df))) * devicePixelRatio
@@ -611,9 +610,8 @@ const CC = makeMap("cc", "tc", {
       ctx.globalAlpha = dim ? 0.4 : 0.9;
       ctx.fillStyle = dim ? grey : (p.hd === false ? DICT_NO : DICT_YES);
       ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
-      // individual term labels only when deeply zoomed, on hover, or for matches
-      const showTerm = !dim && (lvl === -1 || M.hover === p ||
-        (termMatches && termMatches.has(p) && nMatch <= 250));
+      // individual term labels only when deeply zoomed (past cluster labels) or on hover
+      const showTerm = !dim && (lvl === -1 || M.hover === p);
       if (showTerm){
         ctx.globalAlpha = 0.92; ctx.fillStyle = ink;
         ctx.font = `italic ${Math.max(12, 10 + 2.4*Math.log10(p.df)) * devicePixelRatio}px Georgia, serif`;
