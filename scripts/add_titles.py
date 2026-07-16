@@ -36,13 +36,10 @@ def main() -> None:
     titles = {uid: (join(en), join(pa))
               for uid, pa, en in hdr.select("uid", "pali", "english").iter_rows()}
 
-    # commentary segments have no :0. header — use the bibliographic displayName
-    # (a title, not body text) from dharmanexus so they're identifiable/searchable
-    comm_titles = {}
-    dnf = REPO / "data" / "dharmanexus-pali" / "PA_files.json"
-    if dnf.exists():
-        comm_titles = {e["filename"]: e.get("displayName", "")
-                       for e in json.loads(dnf.read_text())}
+    # commentary sub-documents have no :0. header — use the section heading
+    # (a title, not body text) captured by build_commentary_substrate
+    ctf = A / "commentary_titles.json"
+    comm_titles = json.loads(ctf.read_text()) if ctf.exists() else {}
 
     pts = json.loads((A / "map.json").read_text())
     n = 0
