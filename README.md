@@ -1,28 +1,32 @@
 # buddhomics
 
-A hierarchical explorer of the Pali canon at <https://buddhomics.cherch.org>. Each level is a
-"zoom" with its own feature signal and visualization:
+A hierarchical explorer of the Pali canon at <https://buddhomics.cherch.org>. The deployed
+release is a single four-panel instrument over the whole canon:
 
-| Level | Unit | Feature signal | Viz |
-|---|---|---|---|
-| Sound | Pali syllables | phonotactics, meter, assonance | frequency spectra, meter maps |
-| Word | words/lemmas | TF-IDF, collocations, rare terms | word clouds, collocation graphs |
-| Segment | aligned lines | Pali↔English vectors | drill-in reader |
-| Discourse | suttas | document embeddings | tSNE/UMAP scatter |
-| Collection | vagga → saṃyutta → nikāya | centroid drift, dispersion | hierarchical bundling |
-| Basket / canon | whole structure | branching tree | dendrogram |
-| Cross-tradition | Pali ↔ Chinese Āgama parallels | shared vs divergent segments | alignment ribbons |
+- **Taxonomy browser** — a curated tree of ~340 topics (People, Places, Beings, Cosmology,
+  Rhetoric, Numbered Lists, Doctrine, Abhidhamma, Vinaya, Narrative, Translations) that
+  filters both maps at once; each entry is a set of Pali stem-patterns validated against the corpus.
+- **Concept map** — t-SNE of LSA term vectors: every distinctive Pali term placed by the
+  company it keeps.
+- **Text map** — t-SNE of document vectors from the same SVD space: 6,959 texts placed by
+  shared vocabulary, coloured by their traditional grouping (which the layout never sees).
+- **Reader + dictionary** — Pali/English by segment with a per-translator multi-select
+  (human circles, machine squares), layered NCPED/DPD/DPPN word lookup, and accent-insensitive
+  lemma search.
 
-Two ML backbones: (1) tSNE/UMAP over discourse-level vectors (TF-IDF first, multilingual
-sentence embeddings later) to see clusters that may or may not respect nikāya boundaries;
-(2) distance-based tree inference over discourses/collections, compared against the
-canonical hierarchy — the contrast is the story.
+Both maps share one SVD of a Pali TF-IDF matrix and are linked by a term–document incidence
+bitmatrix; the full canon now has English (see [Translation](#translation)).
+
+**Roadmap** — the broader "zoom" vision (sound/meter, word collocation, collection-level
+bundling, cross-tradition Āgama parallels), the tree-inference-vs-canonical view (the
+pipeline's `build_tree.py` is a start), and an embedding-backbone upgrade are tracked as
+[issues](https://github.com/chercherai/buddhomics/issues).
 
 ## Architecture
 
 Analysis runs locally (Python + uv), producing static JSON/parquet artifacts that are
-rsynced to `~/buddhomics.cherch.org` on the shared host (`ssh cherch`). The site is static
-with client-side rendering (d3 / deck.gl); the server is a dumb host.
+rsynced to `~/buddhomics.cherch.org` on the shared host (`ssh cherch`). The site is a single
+dependency-free HTML/JS page rendering both maps on `<canvas>`; the server is a dumb host.
 
 ## Substrate
 
