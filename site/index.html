@@ -269,6 +269,8 @@ const qEl = document.getElementById("q");
 // DPD lookups are inflected-form keyed and sharded (first 2 ASCII-folded chars)
 const DFOLD = {"ā":"a","ī":"i","ū":"u","ṁ":"m","ṃ":"m","ṅ":"n","ñ":"n",
   "ṭ":"t","ḍ":"d","ṇ":"n","ḷ":"l","ṛ":"r","ṝ":"r","ḥ":"h","’":"","'":""};
+// accent-insensitive fold: strip Pali diacritics so "metta" matches "mettā"
+const fold = s => { let o = ""; for (const c of String(s).toLowerCase()) o += (DFOLD[c] ?? c); return o; };
 function shardKey(w){
   let s = ""; for (const c of w.toLowerCase()) s += (DFOLD[c] ?? c);
   s = s.replace(/[^a-z]/g, "");
@@ -296,8 +298,8 @@ async function plemShard(key){
 }
 async function paliDocs(q){                 // docs whose text has a lemma starting with q
   const shard = await plemShard(shardKey(q));
-  const s = new Set();
-  for (const lem in shard) if (lem.startsWith(q)) for (const i of shard[lem]) s.add(docs[i]);
+  const fq = fold(q), s = new Set();
+  for (const lem in shard) if (fold(lem).startsWith(fq)) for (const i of shard[lem]) s.add(docs[i]);
   return s;
 }
 const DICT_YES = "#3f7d5e", DICT_NO = "#9b9384";   // concept map: in-dictionary vs not
@@ -325,12 +327,16 @@ Promise.all([
   terms = c; docs = m;
   bits = new Uint8Array(b);
   BPR = Math.ceil(docs.length / 8);
-  terms.forEach((p, i) => termIdx.set(p.t, i));
-  docs.forEach((p, i) => docIdx.set(p, i));
+  terms.forEach((p, i) => { termIdx.set(p.t, i); p.tf = fold(p.t); });
+  docs.forEach((p, i) => { docIdx.set(p, i);
+    p.f = fold(p.uid + " " + (p.subpath || "") + " " + p.terms.join(" ")); });
   CC.fit(); CD.fit(); CC.resize(); CD.resize();
   buildLegend(); buildTaxo(tax); markHd();
 });
-fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => { dict = d; });
+let dictHwF = [];   // [foldedHeadword, headword] for accent-insensitive dict search
+fetch("dictionary.json", {cache:"no-cache"}).then(r => r.json()).then(d => {
+  dict = d; dictHwF = Object.keys(d).map(hw => [fold(hw), hw]);
+});
 fetch("names.json", {cache:"no-cache"}).then(r => r.json()).then(n => { names = n; });
 fetch("concept_clusters.json", {cache:"no-cache"}).then(r => r.json())
   .then(c => { clusters = c; CC.draw(); }).catch(() => {});
@@ -785,13 +791,13 @@ function searchDict(q){
 }
 function renderDictSearch(q){
   if (!dict) return [];
+  const fq = fold(q);
   let entryHw = null;
-  for (const cand of lookupCandidates(q)){
-    if (dict[cand]){ entryHw = cand; break; }
-  }
+  for (const cand of lookupCandidates(q)){ if (dict[cand]){ entryHw = cand; break; } }
+  if (!entryHw){ const m = dictHwF.find(([f]) => f === fq); if (m) entryHw = m[1]; }
   const hwHits = [], defHits = [];
-  for (const hw in dict){
-    if (hw !== entryHw && hwHits.length < 10 && hw.includes(q)) hwHits.push(hw);
+  for (const [f, hw] of dictHwF){    // accent-folded headword match
+    if (hw !== entryHw && hwHits.length < 10 && f.includes(fq)) hwHits.push(hw);
     if (defHits.length < 12 &&
         dict[hw].some(s => s.d && s.d.toLowerCase().includes(q))) defHits.push(hw);
     if (hwHits.length >= 10 && defHits.length >= 12) break;
@@ -800,14 +806,13 @@ function renderDictSearch(q){
   if (entryHw){
     const senses = dict[entryHw].map(s => `<div class="sense">
       ${s.g ? `<span class="g">${esc(s.g)}</span> ` : ""}${s.d ? esc(s.d) : ""}</div>`).join("");
-    parts.push(`<span class="hw">${esc(entryHw)}</span>${senses}`);
+    parts.push(`<span class="hw">${esc(entryHw)}</span>`
+      + ` <a class="showlink" data-q="${escA(searchStem(entryHw))}">show on maps ↗</a>${senses}`);
   }
   if (hwHits.length)
     parts.push(`<div class="xr">headwords: ${hwHits.map(dlink).join(", ")}</div>`);
   if (defHits.length)
     parts.push(`<div class="xr">in definitions: ${defHits.map(dlink).join(", ")}</div>`);
-  if (hwHits.length || defHits.length)
-    parts.push(`<div class="xr"><span class="hint">dotted = also on the concept map</span></div>`);
   if (parts.length) dictEl.innerHTML = backBtn() + parts.join("");
   else dictEl.innerHTML = `${backBtn()}<span class="hw">${esc(q)}</span>
     <p class="empty">no dictionary matches</p>`;
@@ -816,16 +821,13 @@ function renderDictSearch(q){
 let searchToken = 0;
 qEl.addEventListener("input", async () => {
   if (taxoActive){ taxoActive.classList.remove("active"); taxoActive = null; }
-  const q = qEl.value.trim().toLowerCase();
+  const q = qEl.value.trim().toLowerCase(), fq = fold(q);
   const token = ++searchToken;
   if (!q){ docMatches = null; termMatches = null; setStatus(""); CC.draw(); CD.draw(); return; }
-  // instant: uid / collection / top-terms / English full-text
-  docMatches = new Set(docs.filter(p =>
-    p.uid.toLowerCase().includes(q) ||
-    (p.subpath || "").toLowerCase().includes(q) ||
-    p.terms.some(t => t.includes(q))));
-  for (const p of docsOfEnglish(q)) docMatches.add(p);
-  termMatches = new Set(terms.filter(p => p.t.includes(q)));
+  // instant: uid / collection / top-terms / English full-text (all accent-folded)
+  docMatches = new Set(docs.filter(p => p.f.includes(fq)));
+  for (const p of docsOfEnglish(fq)) docMatches.add(p);
+  termMatches = new Set(terms.filter(p => p.tf.includes(fq)));
   for (const hw of searchDict(q)){       // dict hits also light the concept map
     const p = termOfHeadword(hw);
     if (p) termMatches.add(p);
