@@ -84,7 +84,8 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
   line-height:1.4; box-shadow:0 2px 10px rgba(0,0,0,.12); z-index:3;}
 .tip .hd{font-weight:700;}
 .tip .ttl{font-size:.82rem; margin:.05rem 0;}
-.tip .terms{color:var(--accent); font-style:italic;}
+.tip .terms{color:var(--accent);}
+.tip .terms .g{color:var(--muted);}
 .tip .meta{color:var(--muted);}
 #right{width:26%; max-width:38rem; min-width:19rem; flex:none; display:flex;
   flex-direction:column; gap:.6rem;}
@@ -259,9 +260,32 @@ let hiddenGroups = new Set(), taxoActive = null, currentDoc = null;
 let readerDoc = null, readerActive = new Set();  // open doc JSON + active translator ids
 let readerView = "both";                         // pali | both | english display mode
 let readerPoint = null;                          // the doc point currently in the reader
-let readingOrder = [];                            // docs in natural (numeric-aware) reading order
+let readingOrder = [];                            // docs in canonical reading order
 const readIdx = new Map();                        // point -> reading position
 const natKey = s => String(s).replace(/\d+/g, m => m.padStart(8, "0"));
+// "book" = the organizational unit ^ steps between (a nikāya, KN sub-book, Vinaya
+// section, or Abhidhamma book); KN is split by its sub-book, everything else by nikāya
+const bookKey = p => p.nikaya === "kn"
+  ? (p.subpath || "").split("/").slice(0, 2).join("/") : p.nikaya;
+const BOOK_ORDER = ["pli-tv-bu-vb", "pli-tv-bi-vb", "pli-tv-kd", "pli-tv-pvr",
+  "dn", "mn", "sn", "an",
+  "kn/kp", "kn/dhp", "kn/ud", "kn/iti", "kn/snp", "kn/vv", "kn/pv", "kn/thag", "kn/thig",
+  "kn/tha-ap", "kn/thi-ap", "kn/bv", "kn/cp", "kn/ja", "kn/mnd", "kn/cnd", "kn/ps",
+  "kn/ne", "kn/pe", "kn/mil", "ds", "vb", "dt", "pp", "kv", "ya", "patthana"];
+const BOOK_RANK = new Map(BOOK_ORDER.map((k, i) => [k, i]));
+const BOOK_NAMES = {"dn": "Dīgha", "mn": "Majjhima", "sn": "Saṁyutta", "an": "Aṅguttara",
+  "kn/kp": "Khuddakapāṭha", "kn/dhp": "Dhammapada", "kn/ud": "Udāna", "kn/iti": "Itivuttaka",
+  "kn/snp": "Suttanipāta", "kn/vv": "Vimānavatthu", "kn/pv": "Petavatthu",
+  "kn/thag": "Theragāthā", "kn/thig": "Therīgāthā", "kn/tha-ap": "Thera-apadāna",
+  "kn/thi-ap": "Therī-apadāna", "kn/bv": "Buddhavaṁsa", "kn/cp": "Cariyāpiṭaka",
+  "kn/ja": "Jātaka", "kn/mnd": "Mahāniddesa", "kn/cnd": "Cūḷaniddesa",
+  "kn/ps": "Paṭisambhidā", "kn/ne": "Netti", "kn/pe": "Peṭakopadesa", "kn/mil": "Milinda",
+  "ds": "Dhammasaṅgaṇī", "vb": "Vibhaṅga", "dt": "Dhātukathā", "pp": "Puggalapaññatti",
+  "kv": "Kathāvatthu", "ya": "Yamaka", "patthana": "Paṭṭhāna",
+  "pli-tv-bu-vb": "Bhikkhu Vibhaṅga", "pli-tv-bi-vb": "Bhikkhunī Vibhaṅga",
+  "pli-tv-kd": "Khandhaka", "pli-tv-pvr": "Parivāra"};
+const bookLabel = p => BOOK_NAMES[bookKey(p)] || (p.subpath || p.nikaya || "").split("/").pop();
+const bookRank = p => BOOK_RANK.has(bookKey(p)) ? BOOK_RANK.get(bookKey(p)) : 999;
 const READER_NAMES = {sujato:"Bhikkhu Sujato", brahmali:"Bhikkhu Brahmali",
   kelly:"John Kelly", soma:"Bhikkhu Soma", patton:"Charles Patton",
   suddhaso:"Bhikkhu Suddhāso", anandajoti:"Bhikkhu Ānandajoti", kovilo:"Bhikkhu Kovilo",
@@ -345,7 +369,8 @@ Promise.all([
   docs.forEach((p, i) => { docIdx.set(p, i);
     p.f = fold(p.uid + " " + (p.subpath || "") + " " + p.terms.join(" ")
       + " " + (p.te || "") + " " + (p.tl || "")); });
-  readingOrder = [...docs].sort((a, b) => natKey(a.uid).localeCompare(natKey(b.uid)));
+  readingOrder = [...docs].sort((a, b) =>
+    bookRank(a) - bookRank(b) || natKey(a.uid).localeCompare(natKey(b.uid)));
   readingOrder.forEach((p, i) => readIdx.set(p, i));
   CC.fit(); CD.fit(); CC.resize(); CD.resize();
   buildLegend(); buildTaxo(tax); markHd();
@@ -767,7 +792,7 @@ function termEnglish(t){
 function docTermGloss(p){
   return p.terms.slice(0, 5).map(t => {
     const en = termEnglish(t);
-    return en ? `${esc(t)} | ${esc(en)}` : esc(t);
+    return en ? `${esc(t)} <span class="g">| ${esc(en)}</span>` : esc(t);
   }).join(" · ");
 }
 const CD = makeMap("cd", "td", {
@@ -1043,29 +1068,28 @@ function relitReader(){
 // machine = square). Default activates the best translator; if that's a machine
 // model, all machine models come on together (the machine layer is disjoint per
 // segment, so this completes the doc). The user can then show any combination.
-// reader pager: ‹ prev / ^ next collection / next › (numeric reading order)
-const collLabel = p => (p.subpath || p.nikaya || "").split("/").pop() || p.nikaya;
-function nextCollection(){    // first text of the next distinct collection (subpath)
+// reader pager: ‹ prev · ↑ next book · next › (canonical reading order)
+function nextBook(){    // first text of the next book (organizational level up)
   const i = readIdx.get(readerPoint);
   if (i === undefined) return null;
-  const cur = readerPoint.subpath;
+  const cur = bookKey(readerPoint);
   for (let j = i + 1; j < readingOrder.length; j++)
-    if (readingOrder[j].subpath !== cur) return readingOrder[j];
+    if (bookKey(readingOrder[j]) !== cur) return readingOrder[j];
   return null;
 }
 function navButtons(){
   const i = readIdx.get(readerPoint);
   if (i === undefined) return "";
-  const prev = readingOrder[i - 1], next = readingOrder[i + 1], up = nextCollection();
+  const prev = readingOrder[i - 1], next = readingOrder[i + 1], up = nextBook();
   const btn = (nav, label, title) => `<button data-nav="${nav}" title="${escA(title)}">${label}</button>`;
   const spacer = '<button class="spacer" disabled></button>';
   return (prev ? btn("-1", `‹ ${esc(prev.uid)}`, "previous: " + prev.uid) : spacer)
-    + (up ? btn("up", `↑ ${esc(collLabel(up))}`, "next collection: " + up.uid) : spacer)
+    + (up ? btn("up", `↑ ${esc(bookLabel(up))}`, "next book: " + bookLabel(up)) : spacer)
     + (next ? btn("1", `${esc(next.uid)} ›`, "next: " + next.uid) : spacer);
 }
 function readerNav(nav){
   let target = null;
-  if (nav === "up") target = nextCollection();
+  if (nav === "up") target = nextBook();
   else { const i = readIdx.get(readerPoint); if (i !== undefined) target = readingOrder[i + nav]; }
   if (target) selectDoc(target);
 }
