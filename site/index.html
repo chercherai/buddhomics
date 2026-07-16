@@ -469,12 +469,10 @@ dictEl.addEventListener("click", e => {
 });
 // a searchable stem for the headword: DPD lemma if we can parse it, else the
 // form with its inflectional ending trimmed (so the Pali lemma search matches)
-function searchStem(w, dpdDefs){
-  if (dpdDefs) for (const d of dpdDefs){
-    const m = d.match(/^([^\s:]+)(?:\s+\d+(?:\.\d+)?)?\s*:/);
-    if (m) return m[1].toLowerCase();
-  }
-  return w.replace(/ṁ$/, "").replace(/[aāiīuūoe]$/, "") || w;
+// one predictable stem per word regardless of caller — search is accent-insensitive,
+// so a bare stem ("mett" for mettā) broadly lights the word's family on the maps
+function searchStem(w){
+  return w.toLowerCase().replace(/ṁ$/, "").replace(/[aāiīuūoe]$/, "") || w;
 }
 function dictPush(state){
   if (dictCur && !(dictCur.s !== undefined && state.s !== undefined)){
@@ -544,7 +542,7 @@ async function renderDictEntry(w){
     return;
   }
   const parts = [backBtn(), `<span class="hw">${esc(w)}</span>` +
-    ` <a class="showlink" data-q="${escA(searchStem(w, dpdDefs))}">show on maps ↗</a>`];
+    ` <a class="showlink" data-q="${escA(searchStem(w))}">show on maps ↗</a>`];
   if (ncHw){   // NCPED first — concise prose, easiest to read
     parts.push(`<div class="src">NCPED${ncHw !== w ? " · " + esc(ncHw) : ""}</div>`);
     for (const s of dict[ncHw]) parts.push(`<div class="sense">${
