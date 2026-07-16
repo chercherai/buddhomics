@@ -86,6 +86,14 @@ texts; click a text to read it; click any Pali word in the reader for an NCPED
 definition and its place on the concept map. (UMAP coords remain in map.json;
 tree inference still runs in the pipeline via build_tree.py.)
 
+## License
+
+The code in this repository (analysis pipeline + static site) is [MIT](LICENSE)-licensed.
+The **texts** are not ours to relicense: the Pali root and human translations come from
+[SuttaCentral / bilara-data](https://github.com/suttacentral/bilara-data) under **CC0**;
+our machine translations are likewise offered as CC0 (see the fork). Dictionaries (NCPED,
+DPD, DPPN) remain under their upstream licenses — see the [about page](https://buddhomics.cherch.org/about.html).
+
 ## Translation
 
 The untranslated remainder (Abhidhamma, dense Khuddaka, Vinaya) was machine-translated so
