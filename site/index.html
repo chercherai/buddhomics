@@ -743,7 +743,7 @@ const dimC = () => getComputedStyle(document.documentElement)
 
 // shared: draw zoom-appropriate cluster summary labels, biggest-first with
 // greedy collision avoidance. `data` = {levels:[{clusters:[{t,x,y,n}]}]}
-function drawClusterLabels(ctx, M, data){
+function drawClusterLabels(ctx, M, data, scale = 1){
   if (!data) return;
   const ratio = M.fitK ? M.view.k / M.fitK : 1;
   // zoomed out past this point (largest view height) all labels disappear
@@ -757,7 +757,7 @@ function drawClusterLabels(ctx, M, data){
   for (const c of data.levels[lvl].clusters){    // already size-desc
     const [x, y] = M.projXY(c.x, c.y);
     if (x < 0 || y < 0 || x > w || y > h) continue;
-    const fs = (13 + Math.min(9, 3 * Math.log10(c.n))) * devicePixelRatio;
+    const fs = (13 + Math.min(9, 3 * Math.log10(c.n))) * devicePixelRatio * scale;
     ctx.font = `600 ${fs}px "Iowan Old Style", Georgia, serif`;
     const tw = ctx.measureText(c.t).width, th = fs * 1.25;
     const box = [x - tw/2 - 3, y - th/2, x + tw/2 + 3, y + th/2];
@@ -881,7 +881,7 @@ const CD = makeMap("cd", "td", {
         ctx.beginPath(); ctx.arc(x, y, r + 4.5 * devicePixelRatio, 0, 7); ctx.stroke();
       }
     }
-    drawClusterLabels(ctx, M, textClusters);   // text-cluster labels (stay up under filters)
+    drawClusterLabels(ctx, M, textClusters, 0.72);   // smaller, to match concept-map label scale
     ctx.globalAlpha = 1;
   },
 });
