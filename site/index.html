@@ -478,8 +478,9 @@ function selectDoc(p){   // currentDoc = what's open in the reader, marked on th
   currentDoc = p;
   const filtered = !!taxoActive || qEl.value.trim() !== "";
   if (!filtered){
-    // no filter active: focus this text — its footprint on the concept map
-    docMatches = new Set([p]);
+    // no filter active: highlight this text's concept footprint, but leave the
+    // text map fully coloured — the selection ring alone marks the chosen point
+    docMatches = null;
     termMatches = termsOfDoc(docs.indexOf(p));
     setStatus(`<b>${p.uid}</b> touches <b>${termMatches.size}</b> concept terms`);
   }
