@@ -768,7 +768,7 @@ function docTermGloss(p){
   return p.terms.slice(0, 5).map(t => {
     const en = termEnglish(t);
     return en ? `${esc(t)} | ${esc(en)}` : esc(t);
-  }).join(" * ");
+  }).join(" · ");
 }
 const CD = makeMap("cd", "td", {
   pts: () => docs, px: p => p.tx, py: p => p.ty,
@@ -1060,7 +1060,7 @@ function navButtons(){
   const btn = (nav, label, title) => `<button data-nav="${nav}" title="${escA(title)}">${label}</button>`;
   const spacer = '<button class="spacer" disabled></button>';
   return (prev ? btn("-1", `‹ ${esc(prev.uid)}`, "previous: " + prev.uid) : spacer)
-    + (up ? btn("up", `^ ${esc(collLabel(up))}`, "next collection: " + up.uid) : spacer)
+    + (up ? btn("up", `↑ ${esc(collLabel(up))}`, "next collection: " + up.uid) : spacer)
     + (next ? btn("1", `${esc(next.uid)} ›`, "next: " + next.uid) : spacer);
 }
 function readerNav(nav){
