@@ -83,6 +83,7 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
   padding:.5rem .65rem; font-family:system-ui,sans-serif; font-size:.75rem;
   line-height:1.4; box-shadow:0 2px 10px rgba(0,0,0,.12); z-index:3;}
 .tip .hd{font-weight:700;}
+.tip .ttl{font-size:.82rem; margin:.05rem 0;}
 .tip .terms{color:var(--accent); font-style:italic;}
 .tip .meta{color:var(--muted);}
 #right{width:26%; max-width:38rem; min-width:19rem; flex:none; display:flex;
@@ -342,7 +343,8 @@ Promise.all([
   BPR = Math.ceil(docs.length / 8);
   terms.forEach((p, i) => { termIdx.set(p.t, i); p.tf = fold(p.t); });
   docs.forEach((p, i) => { docIdx.set(p, i);
-    p.f = fold(p.uid + " " + (p.subpath || "") + " " + p.terms.join(" ")); });
+    p.f = fold(p.uid + " " + (p.subpath || "") + " " + p.terms.join(" ")
+      + " " + (p.te || "") + " " + (p.tl || "")); });
   readingOrder = [...docs].sort((a, b) => natKey(a.uid).localeCompare(natKey(b.uid)));
   readingOrder.forEach((p, i) => readIdx.set(p, i));
   CC.fit(); CD.fit(); CC.resize(); CD.resize();
@@ -751,13 +753,31 @@ const CC = makeMap("cc", "tc", {
   },
 });
 
+// short English gloss for a Pali term: concept-map gloss first, else NCPED (loaded)
+function termEnglish(t){
+  const i = termIdx.get(t);
+  if (i !== undefined && terms[i].en) return terms[i].en;
+  if (dict) for (const c of lookupCandidates(t)){
+    const e = dict[c] && dict[c].find(s => s.d);
+    if (e) return e.d.split(";")[0].split(",")[0].trim().slice(0, 40);
+  }
+  return null;
+}
+// a doc's top terms as "pali | english-gloss * pali | english-gloss" (gloss where available)
+function docTermGloss(p){
+  return p.terms.slice(0, 5).map(t => {
+    const en = termEnglish(t);
+    return en ? `${esc(t)} | ${esc(en)}` : esc(t);
+  }).join(" * ");
+}
 const CD = makeMap("cd", "td", {
   pts: () => docs, px: p => p.tx, py: p => p.ty,
   skip: p => hiddenGroups.has(groupOf(p)) ||
              (filterActive() && docMatches && !docMatches.has(p)),
-  tipHtml: p => `<div class="hd">${p.uid}</div>
-    <div class="meta">${p.basket} · ${p.subpath || p.nikaya} · ${p.n} segments</div>
-    <div class="terms">${p.terms.slice(0,5).join(" · ")}</div>`,
+  tipHtml: p => `<div class="hd">${esc(p.uid)}</div>
+    ${p.te ? `<div class="ttl">${esc(p.te)}</div>` : ""}
+    <div class="meta">${esc(p.basket)} · ${esc(p.subpath || p.nikaya)} · ${p.n} segments</div>
+    <div class="terms">${docTermGloss(p)}</div>`,
   onClick: selectDoc,
   draw: (ctx, M) => {
     const w = M.canvas.width, h = M.canvas.height;
@@ -1023,23 +1043,35 @@ function relitReader(){
 // machine = square). Default activates the best translator; if that's a machine
 // model, all machine models come on together (the machine layer is disjoint per
 // segment, so this completes the doc). The user can then show any combination.
-// prev / next sutta pager, in numeric reading order
+// reader pager: ‹ prev / ^ next collection / next › (numeric reading order)
+const collLabel = p => (p.subpath || p.nikaya || "").split("/").pop() || p.nikaya;
+function nextCollection(){    // first text of the next distinct collection (subpath)
+  const i = readIdx.get(readerPoint);
+  if (i === undefined) return null;
+  const cur = readerPoint.subpath;
+  for (let j = i + 1; j < readingOrder.length; j++)
+    if (readingOrder[j].subpath !== cur) return readingOrder[j];
+  return null;
+}
 function navButtons(){
   const i = readIdx.get(readerPoint);
   if (i === undefined) return "";
-  const prev = readingOrder[i - 1], next = readingOrder[i + 1];
-  return (prev ? `<button data-nav="-1" title="${escA(prev.uid)}">‹ ${esc(prev.uid)}</button>`
-               : `<button class="spacer" disabled>‹</button>`)
-    + (next ? `<button data-nav="1" title="${escA(next.uid)}">${esc(next.uid)} ›</button>`
-            : `<button class="spacer" disabled>›</button>`);
+  const prev = readingOrder[i - 1], next = readingOrder[i + 1], up = nextCollection();
+  const btn = (nav, label, title) => `<button data-nav="${nav}" title="${escA(title)}">${label}</button>`;
+  const spacer = '<button class="spacer" disabled></button>';
+  return (prev ? btn("-1", `‹ ${esc(prev.uid)}`, "previous: " + prev.uid) : spacer)
+    + (up ? btn("up", `^ ${esc(collLabel(up))}`, "next collection: " + up.uid) : spacer)
+    + (next ? btn("1", `${esc(next.uid)} ›`, "next: " + next.uid) : spacer);
 }
-function readerNav(dir){
-  const i = readIdx.get(readerPoint);
-  if (i !== undefined && readingOrder[i + dir]) selectDoc(readingOrder[i + dir]);
+function readerNav(nav){
+  let target = null;
+  if (nav === "up") target = nextCollection();
+  else { const i = readIdx.get(readerPoint); if (i !== undefined) target = readingOrder[i + nav]; }
+  if (target) selectDoc(target);
 }
 document.getElementById("reader").addEventListener("click", e => {
   const b = e.target.closest("button[data-nav]");
-  if (b) readerNav(+b.dataset.nav);
+  if (b) readerNav(b.dataset.nav === "up" ? "up" : +b.dataset.nav);
 });
 
 function defaultActive(doc){
@@ -1084,7 +1116,6 @@ function renderReaderBody(){
       }
     parts.push('</div>');
   }
-  parts.push(`<div class="rnav bot">${navButtons()}</div>`);
   rbody.innerHTML = parts.join("");
   rbody.scrollTop = 0;
   relitReader();
