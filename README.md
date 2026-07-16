@@ -36,23 +36,32 @@ uv run scripts/build_substrate.py
 
 Outputs in `artifacts/` (gitignored):
 
-- `segments.parquet` / `segments.sqlite` — one row per aligned segment:
-  `uid, basket, nikaya, subpath, segment_id, seq, pali, english, translator`
-- `documents.parquet` (also a table in the sqlite) — per-text rollup with segment counts
-  and `translated_frac`
+- `segments.parquet` / `segments.sqlite` — one row per aligned segment (`uid, basket,
+  nikaya, subpath, segment_id, seq, pali, english, translator`); `english`/`translator`
+  hold the *best-available* rendering (human preferred, machine filling gaps)
+- `translations_human.parquet` — long table of **every** human translation
+  (`segment_id, translator, english, kind`), not just one per text
+- `documents.parquet` — per-text rollup with segment counts, `translated_frac`, and the
+  list of available `translators`
+
+`merge_translations.py` then composes the human table with the machine layers into
+`translations.parquet` (all sources) and recomputes the best-available backbone — see
+Translation below.
 
 Current counts: 7,288 documents, 447,069 segments (sutta 284,708 / vinaya 73,947 /
-abhidhamma 88,414). English is sujato-first, brahmali fallback, then any translator.
-KN is only ~33% translated; DN/MN/SN/AN are ~93–98%.
+abhidhamma 88,414). With machine translation folded in, **96.5% of segments** now have
+English (up from ~48%); the remainder is the intentional gaps in partial human translations.
+104 texts carry more than one human translation; all are preserved and selectable.
 
 ## Pipeline
 
 ```sh
+uv run scripts/merge_translations.py  # compose human + machine translations -> translations.parquet, recompute backbone
 uv run scripts/build_features.py   # Pali TF-IDF -> SVD(100) -> UMAP + t-SNE; map.json + doc_svd.npy
 uv run scripts/build_tree.py       # collection centroids -> cosine average-linkage -> tree.svg
 uv run scripts/build_concepts.py   # LSA term vectors -> t-SNE concept map with numbered-list overlays
-uv run scripts/build_taxonomy.py   # curated People/Beings/Places/Lists -> per-term doc membership
-uv run scripts/build_texts.py      # per-document segment JSON for the reading panel
+uv run scripts/build_taxonomy.py   # curated taxonomy (+ scripts/taxonomy_additions.json) -> per-term doc membership
+uv run scripts/build_texts.py      # per-document multi-translation segment JSON for the reader
 uv run scripts/build_concept_bits.py  # term-doc incidence bitmatrix linking the two maps
 uv run scripts/build_concept_clusters.py  # single-linkage cluster centroids per zoom level (concept map)
 uv run scripts/build_text_clusters.py     # same, for the texts map (with collection mix for labelling)
@@ -73,12 +82,31 @@ texts; click a text to read it; click any Pali word in the reader for an NCPED
 definition and its place on the concept map. (UMAP coords remain in map.json;
 tree inference still runs in the pipeline via build_tree.py.)
 
-## Translation bake-off (2026-07-14)
+## Translation
 
-`scripts/select_passages.py` + `run_bakeoff.py` (Claude models) + `run_bakeoff_openrouter.py`
-(GPT-5.6 family) translate 12 hard untranslated passages, compared against Fable 5
-reference translations in `artifacts/bakeoff_fable.json`. Report generator:
-`build_bakeoff_report.py`. Verdict: Fable 5 ≥ Opus 4.8 > GPT-5.6 sol ≈ Sonnet 5 >
-GPT-5.6 terra > GPT-5.6 luna ≫ Haiku 4.5. Plan: translate the untranslated canon
-with `claude-fable-5` via the Batch API (~$190), Opus 4.8 fallback on refusal;
-prompt must pin markup preservation, `…pe…` elisions, and per-request segment caps.
+The untranslated remainder (Abhidhamma, dense Khuddaka, Vinaya) was machine-translated so
+the whole canon is legible and searchable in English. A blind **bake-off**
+(`select_passages.py` + `run_bakeoff.py` for Claude, `run_bakeoff_openrouter.py` for the
+GPT-5.6 family, scored against Fable-5 reference translations, `build_bakeoff_report.py`)
+picked **Claude Fable 5** — a single primary translator keeps a uniform register so a model
+seam doesn't fall on basket boundaries.
+
+```sh
+uv run scripts/translate_batch.py submit-all       # one Batch job per t-SNE cluster over all untranslated docs
+uv run scripts/translate_batch.py poll-all          # ... watch the manifest
+uv run scripts/translate_batch.py merge-all         # results -> translations_fable.parquet
+uv run scripts/translate_batch.py submit-refused    # retry Fable-refused segments (never human partials)
+uv run scripts/translate_fallback.py                # persistent refusals -> GPT-5.6 sol via OpenRouter (smaller chunks)
+uv run scripts/merge_translations.py                # fold everything into the substrate
+```
+
+Prompt pins: preserve `<b>` lemma markup, keep `…pe…` elisions verbatim, cap segments per
+request (32k `max_tokens`). Outcome: **215,610 segments across 2,608 docs** —
+2,599 by `claude-fable-5`, 9 by `gpt-5.6-sol` (segments Fable declined; a different vendor
+doesn't share the refusal boundary, and 40-segment chunks dodge dense-text truncation).
+Machine segments are marked with their model and labelled as unedited renderings in the reader.
+
+`scripts/export_bilara.py` writes them back to bilara/sc-data format (one author dir per
+model), published at
+[chercherai/bilara-data](https://github.com/chercherai/bilara-data) (branch
+`machine-translations`) as a research aid — not published translations.

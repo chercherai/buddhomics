@@ -5,21 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>buddhomics — about</title>
 <style>
-:root{ --bg:#FAFAF7; --ink:#212633; --muted:#6B7080; --rule:#DDDCD4; --accent:#8E2A18; }
+:root{ --bg:#FAFAF7; --ink:#212633; --muted:#6B7080; --rule:#DDDCD4; --accent:#8E2A18; --card:#EFEDE4; }
 @media (prefers-color-scheme: dark){:root{
-  --bg:#15171D; --ink:#DEDCD2; --muted:#8B8F9C; --rule:#2C2F38; --accent:#C9A45C; }}
+  --bg:#15171D; --ink:#DEDCD2; --muted:#8B8F9C; --rule:#2C2F38; --accent:#C9A45C; --card:#1E2129; }}
 body{margin:0; background:var(--bg); color:var(--ink);
-  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.6;}
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif; line-height:1.62;}
 header{padding:1.2rem 1.5rem .4rem; display:flex; align-items:baseline; gap:1.2rem; flex-wrap:wrap;}
 h1{font-size:1.35rem; margin:0; font-weight:600;}
 h1 a{color:inherit; text-decoration:none}
 .nav{font-family:system-ui,sans-serif; font-size:.8rem;}
 .nav a{color:var(--muted); text-decoration:none; margin-right:1rem;}
 .nav a:hover,.nav a[aria-current]{color:var(--accent);}
-main{margin:1.5rem auto 4rem; padding:0 1.5rem; max-width:44rem;}
-h2{font-size:1.15rem; margin-top:2rem;}
+main{margin:1.4rem auto 4rem; padding:0 1.5rem; max-width:44rem;}
+h2{font-size:1.15rem; margin-top:2.2rem; border-bottom:1px solid var(--rule); padding-bottom:.25rem;}
 a{color:var(--accent);}
+p{margin:.7rem 0;}
 .muted{color:var(--muted); font-size:.9rem;}
+.lead{font-size:1.05rem;}
+ul{padding-left:1.15rem;}
+li{margin:.3rem 0;}
+.src dt{font-weight:600; margin-top:.7rem;}
+.src dd{margin:.1rem 0 0; color:var(--muted); font-size:.92rem;}
+code{font-family:"SF Mono",ui-monospace,Menlo,monospace; font-size:.82em;
+  background:var(--card); padding:.05rem .3rem; border-radius:4px;}
+footer{max-width:44rem; margin:0 auto 3rem; padding:1rem 1.5rem 0; border-top:1px solid var(--rule);
+  font-family:system-ui,sans-serif; font-size:.78rem; color:var(--muted);}
+footer a{color:var(--muted);}
 </style>
 </head>
 <body>
@@ -31,34 +42,101 @@ a{color:var(--accent);}
   </nav>
 </header>
 <main>
-  <h2>What this is</h2>
-  <p>A hierarchical explorer of the Pali canon, built on the segment-aligned
-  <a href="https://github.com/suttacentral/bilara-data">bilara-data</a> corpus
-  (Mahāsaṅgīti edition; translations by Bhikkhu Sujato and Bhikkhu Brahmali where
-  available). Each level of the canon — sound, word, segment, discourse, collection,
-  basket — gets its own feature signal and its own view. The current release is a single
-  four-panel instrument: a curated taxonomy browser, the concept map and the text map
-  (both t-SNE over one shared SVD space, linked by a full-text term–document matrix),
-  and a reader with per-word dictionary lookup (NCPED via sc-data). Collection-level
-  tree inference lives in the analysis pipeline and will return in a future pass.</p>
+  <p class="lead">buddhomics treats the Pali canon as one instrument: a place to browse
+  by topic, follow a concept to the texts that carry it, read those texts in Pali and
+  English side by side, and look up any word — all against a map the machine drew from
+  the vocabulary alone.</p>
 
-  <h2>How the map is made</h2>
-  <p>Each of the 6,959 texts is represented by TF-IDF weights over a 40,000-term
-  Pali vocabulary, reduced to 100 dimensions with truncated SVD, then laid out in 2D
-  with UMAP on cosine distance. Points near each other share vocabulary. The colors
-  are the traditional groupings — the layout knows nothing about them, which is what
-  makes the agreements and the mixtures interesting.</p>
+  <h2>The corpus</h2>
+  <p>Everything is built on <a href="https://github.com/suttacentral/bilara-data">bilara-data</a>,
+  SuttaCentral's segment-aligned edition of the canon: the Pali root text of the
+  <b>Mahāsaṅgīti Tipiṭaka</b> (the Sixth-Council recension), split into ~447,000 numbered
+  segments across 6,959 documents, each Pali segment paired with its English translations
+  where they exist. Because the text is segment-aligned, a translation can be laid exactly
+  over the Pali — which is what makes a shared feature space, and the reader's line-by-line
+  view, possible. Segment-aligned English exists for a little under half the canon,
+  contributed by <a href="https://suttacentral.net">SuttaCentral</a> translators —
+  chiefly Bhikkhu Sujato and Bhikkhu Brahmali, with Bhikkhu Bodhi's numbering, and partial
+  renderings by John Kelly, Bhikkhu Soma, Bhikkhu Suddhāso, and others. Where more than one
+  translator has rendered a text, all of them are kept and selectable in the reader.</p>
+
+  <h2>Machine translation of the untranslated remainder</h2>
+  <p>The half of the canon without segment-aligned English is not obscure filler — it is the
+  Abhidhamma (the entire Paṭṭhāna, Yamaka, Kathāvatthu…), the dense late Khuddaka books
+  (Niddesa, Paṭisambhidāmagga, the Apadāna and Buddhavaṁsa), and stretches of Vinaya. To
+  make the whole map legible and searchable in English, the untranslated remainder — about
+  216,000 segments across 2,608 documents — was machine-translated with <b>Claude Fable 5</b>
+  (Anthropic's most capable model), chosen after a blind bake-off against Opus 4.8, Sonnet 5,
+  and the GPT-5.6 family scored on the canon's hardest passages. A single primary translator
+  keeps a uniform register, so a model "seam" doesn't fall on basket boundaries where the
+  clustering would then rediscover it. The few passages Fable declined or truncated were
+  finished with <b>GPT-5.6</b> — a different vendor doesn't share the same refusal boundary.</p>
+  <p>These are <b>unedited machine renderings</b>, offered as a research aid, never as
+  published translations — the reader labels them plainly and marks each machine segment's
+  model. They are also released in bilara/sc-data format for anyone who finds them useful:
+  <a href="https://github.com/chercherai/bilara-data">chercherai/bilara-data</a>
+  (branch <code>machine-translations</code>).</p>
+
+  <h2>How the maps are made</h2>
+  <p>Each of the 6,959 texts is turned into a vector of <b>TF-IDF</b> weights over a
+  ~40,000-term Pali vocabulary (tokens, tag-stripped), and that texts-by-terms matrix is
+  reduced to 100 dimensions with truncated <b>SVD</b> — a single latent-semantic space that
+  gives coordinates to <em>both</em> texts and terms. The <b>texts map</b> lays out the
+  document vectors and the <b>concept map</b> lays out the term vectors, each with
+  <b>t-SNE</b>; points that sit near each other share vocabulary. The colours are the
+  traditional basket/collection groupings — the layout knows nothing about them, which is
+  exactly what makes the agreements and the surprising mixtures worth looking at. Cluster
+  labels come from single-linkage clustering on the t-SNE points, cut at several heights and
+  named by a pass of language-model labelling.</p>
 
   <h2>How the panels link</h2>
-  <p>The term map and the text map are joined by a term–document incidence matrix over
-  the full Pali text. Click a term to see every text that contains it; click a text to
-  see its vocabulary footprint and read it, Pali and English interleaved; click any
-  Pali word in the reader to look it up and locate it among the concepts.</p>
+  <p>A term–document incidence matrix over the full Pali text joins the two maps. Click a
+  concept to light every text that contains it; click a text to see its vocabulary footprint
+  on the concept map and open it in the reader; click any Pali word in the reader to look it
+  up and find it among the concepts. A curated <b>taxonomy</b> down the left — 339 entries
+  across People, Places, Beings, Cosmology, Rhetoric, Numbered Lists, Doctrine, Abhidhamma,
+  Vinaya, Narrative, and Translations — filters both maps at once; each entry is a set of
+  Pali stem-patterns validated against the corpus.</p>
+
+  <h2>Reader, dictionary, and search</h2>
+  <p>The reader shows Pali and English by segment, with a Pali / Both / English toggle and,
+  when a text has more than one translation, an independent toggle per translator (human =
+  circle, machine = square) so you can read any one or several at once. Word lookup layers
+  three dictionaries: the <a href="https://suttacentral.net">New Concise Pali English
+  Dictionary</a> for concise prose, the <a href="https://dpdict.net">Digital Pāḷi
+  Dictionary</a> (inflected-form keyed, ~142k entries) for grammar and homonyms, and the
+  Dictionary of Pāḷi Proper Names for people and places. Search is accent-insensitive
+  (<code>metta</code> finds <em>mettā</em>) and runs over references, English full-text, and
+  a lemma-collapsed Pali full-text index, so a search folds every inflected form of a word
+  together.</p>
+
+  <h2>Sources &amp; code</h2>
+  <dl class="src">
+    <dt><a href="https://github.com/chercherai/buddhomics">chercherai/buddhomics</a></dt>
+    <dd>This project — analysis pipeline and the static site. Runs locally, deploys as flat files.</dd>
+    <dt><a href="https://github.com/chercherai/bilara-data">chercherai/bilara-data</a></dt>
+    <dd>Our machine translations in bilara/sc-data format (branch <code>machine-translations</code>).</dd>
+    <dt><a href="https://github.com/suttacentral/bilara-data">suttacentral/bilara-data</a></dt>
+    <dd>The segment-aligned root text and human translations. Mahāsaṅgīti Pali; English by Sujato, Brahmali, et al.</dd>
+    <dt><a href="https://github.com/suttacentral/sc-data">suttacentral/sc-data</a></dt>
+    <dd>Dictionaries and reference data — NCPED, DPPN, and more — via SuttaCentral.</dd>
+    <dt><a href="https://dpdict.net">Digital Pāḷi Dictionary (DPD)</a></dt>
+    <dd>Bhikkhu Bodhirasa's inflected-form dictionary; the reader's grammar and homonym source.</dd>
+    <dt><a href="https://suttacentral.net">SuttaCentral</a></dt>
+    <dd>The home of the underlying edition and translations; every text links back to its page there.</dd>
+  </dl>
 
   <h2>Caveats</h2>
-  <p class="muted">Lexical similarity is not doctrine, chronology, or authorship.
-  UMAP distorts global distances by design. Collection centroids blur internal
-  diversity. Treat everything here as a lens for finding questions, not answers.</p>
+  <p class="muted">Lexical similarity is not doctrine, chronology, or authorship. t-SNE
+  distorts global distances by design — read neighbourhoods, not absolute positions.
+  Cluster centroids blur internal diversity. Machine translations carry the errors of
+  machine translation, especially in the technical Abhidhamma. Treat everything here as a
+  lens for finding questions, not answers.</p>
 </main>
+<footer>
+  Built by <a href="https://github.com/chercherai">chercherai</a> · code on
+  <a href="https://github.com/chercherai/buddhomics">GitHub</a> · text and translations
+  under the licences of their upstream sources.
+</footer>
 </body>
 </html>
