@@ -1,12 +1,17 @@
 """Multi-scale cluster labels for the TEXTS map (document t-SNE).
 
-Single-linkage on the document t-SNE points, cut at three distance heights.
+Ward linkage on the document t-SNE points, cut to a target cluster count at
+three zoom scales (coarse -> fine). Ward gives spatially compact clusters, so
+label anchors sit at meaningful centroids and a big text (e.g. the finely-split
+Paṭṭhāna) stays one region instead of fragmenting into near-duplicate blobs the
+way single-linkage chaining did.
+
 Each cluster carries its collection mix, aggregated top terms, and sample uids
 for subagent semantic labelling (see clusters_T*.txt payloads).
 
 Writes artifacts/text_clusters.json:
-  {"levels": [{"thr": .., "clusters": [{"t","terms","sub","uids","x","y","n"}]}]}
-ordered coarse -> fine.
+  {"levels": [{"k": .., "clusters": [{"t","terms","sub","uids","x","y","n"}]}]}
+ordered coarse -> fine. (Client keys levels by zoom index, not by k/thr.)
 """
 
 import json
@@ -19,21 +24,19 @@ from scipy.cluster.hierarchy import fcluster, linkage
 REPO = Path(__file__).resolve().parent.parent
 A = REPO / "artifacts"
 
-LEVELS = [(4.2, 40), (3.3, 20), (2.6, 10)]   # (distance threshold, min size) coarse->fine
+LEVELS = [24, 44, 72]   # target cluster count, coarse -> fine
 
 
 def main() -> None:
     pts = json.loads((A / "map.json").read_text())
     xy = np.array([[p["tx"], p["ty"]] for p in pts])
-    L = linkage(xy, method="single")
+    L = linkage(xy, method="ward")
     levels = []
-    for thr, minsize in LEVELS:
-        assign = fcluster(L, t=thr, criterion="distance")
+    for k in LEVELS:
+        assign = fcluster(L, t=k, criterion="maxclust")
         clusters = []
         for c in np.unique(assign):
             idx = np.where(assign == c)[0]
-            if len(idx) < minsize:
-                continue
             members = [pts[i] for i in idx]
             term_ct = Counter(t for m in members for t in m["terms"])
             sub_ct = Counter(m["subpath"] for m in members)
@@ -47,8 +50,9 @@ def main() -> None:
                 "n": int(len(idx)),
             })
         clusters.sort(key=lambda c: -c["n"])
-        levels.append({"thr": thr, "clusters": clusters})
-        print(f"thr={thr}: {len(clusters)} clusters (largest n={clusters[0]['n']})")
+        levels.append({"k": k, "clusters": clusters})
+        print(f"k={k}: {len(clusters)} clusters "
+              f"(largest n={clusters[0]['n']}, smallest n={clusters[-1]['n']})")
 
     (A / "text_clusters.json").write_text(json.dumps({"levels": levels}, ensure_ascii=False))
 

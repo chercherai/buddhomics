@@ -292,12 +292,13 @@ def main() -> None:
                             {"t": term["t"], "docs": d, "stems": term["stems"]})
 
     # ---- Translations: language availability + who produced the English ----
-    MACHINE = {"claude-fable-5", "gpt-5.6-sol"}
+    MACHINE = {"claude-fable-5", "gpt-5.6-sol", "dharmamitra"}
     TR_NAMES = {"sujato": "Bhikkhu Sujato", "brahmali": "Bhikkhu Brahmali",
                 "kelly": "John Kelly", "kovilo": "Bhikkhu Kovilo",
                 "soma": "Bhikkhu Soma", "suddhaso": "Bhikkhu Suddhāso",
                 "patton": "Charles Patton", "anandajoti": "Bhikkhu Ānandajoti",
-                "claude-fable-5": "Claude Fable 5", "gpt-5.6-sol": "GPT-5.6"}
+                "claude-fable-5": "Claude Fable 5", "gpt-5.6-sol": "GPT-5.6",
+                "dharmamitra": "DharmaMitra"}
     docmeta = pl.read_parquet(A / "documents.parquet")
 
     # English availability = any English at all (human OR machine), from the substrate
@@ -317,6 +318,15 @@ def main() -> None:
     for i, u in enumerate(uids):
         for t in (uid_trs.get(u) or []):
             tr_docs.setdefault(t, []).append(i)
+    # DharmaMitra's commentary English lives on the combined segments, not in
+    # documents.parquet — derive its doc set directly and fold it in so it
+    # surfaces under Machine (English)
+    if "translator" in segs.columns:
+        dm_uids = set(segs.filter(pl.col("translator") == "dharmamitra")
+                      .select("uid").unique().to_series().to_list())
+        dm_docs = sorted(uid_pos[u] for u in dm_uids if u in uid_pos)
+        if dm_docs:
+            tr_docs["dharmamitra"] = dm_docs
     human = sorted(((t, d) for t, d in tr_docs.items() if t not in MACHINE),
                    key=lambda kv: -len(kv[1]))
     machine = sorted(((t, d) for t, d in tr_docs.items() if t in MACHINE),
@@ -329,7 +339,8 @@ def main() -> None:
     DOT = {"sujato": "#60a5fa", "brahmali": "#f59e0b", "kelly": "#4ade80",
            "soma": "#f472b6", "suddhaso": "#a3e635", "kovilo": "#fb923c",
            "anandajoti": "#e879f9", "patton": "#22d3ee",
-           "claude-fable-5": "#a78bfa", "gpt-5.6-sol": "#2dd4bf"}
+           "claude-fable-5": "#a78bfa", "gpt-5.6-sol": "#2dd4bf",
+           "dharmamitra": "#6aa84f"}
     if human:
         trans_subs.append({"h": "Human (English)", "terms": [
             {"t": TR_NAMES.get(t, t.title()), "docs": sorted(d), "dot": DOT.get(t)}
