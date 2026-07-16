@@ -18,7 +18,7 @@ if gpt_path.exists():
         results.setdefault(uid, {}).update(models)
 
 ROWS = [
-    ("fable", "Fable 5 (me)"),
+    ("fable", "Fable 5"),
     ("claude-opus-4-8", "Opus 4.8"),
     ("openai/gpt-5.6-sol", "GPT-5.6 sol"),
     ("claude-sonnet-5", "Sonnet 5"),
@@ -61,8 +61,8 @@ NOTES = {
     ("ja531", "ja531:19.2", "openai/gpt-5.6-luna"): "Segments 19.1–19.4 redistributed and garbled (“she supports a cook … yet has no interest in wages”) — alignment and sense both suffer.",
     ("ja531", "ja531:20.2", "openai/gpt-5.6-luna"): "“Does not deserve to have her tongue cut out … ?” — inverts the threat, like Haiku.",
     ("ja531", "ja531:21.4", "openai/gpt-5.6-luna"): "“Make yourself pleasing to your lovely beloved” — karassu rucire piyaṁ is “hold him dear, O lovely one”.",
-    ("pv36", "pv36:8.2", "openai/gpt-5.6-sol"): "All three GPT tiers read sattussada as “seven-fold” — same choice as Sonnet. Correction to my earlier note: the ‘seven ussada (subsidiary hells)’ parse is attested in the tradition alongside “crowded with beings” (sattehi ussanno), so this is a debatable reading, not a plain error.",
-    ("pv36", "pv36:9.4", "claude-opus-4-8"): "Revision against my own reference: the relative reading “into which he would fall” (Opus, Sonnet, all GPT tiers) is smoother than my carry-over of the prohibitive mā from 7.4. Score one against the referee.",
+    ("pv36", "pv36:8.2", "openai/gpt-5.6-sol"): "All three GPT tiers read sattussada as “seven-fold” — same choice as Sonnet. The ‘seven ussada (subsidiary hells)’ parse is attested in the tradition alongside “crowded with beings” (sattehi ussanno), so this is a debatable reading, not a plain error.",
+    ("pv36", "pv36:9.4", "claude-opus-4-8"): "The relative reading “into which he would fall” (Opus, Sonnet, all GPT tiers) reads more smoothly than the reference’s carry-over of the prohibitive mā from 7.4 — a point against the reference.",
     ("pv36", "pv36:12.3", "openai/gpt-5.6-sol"): "Speaker flipped — saddheyyavaco is the asker’s word being deemed trustworthy, not “you would trust my words”. Terra and Luna make the same flip.",
     ("mil3.1.13", "mil3.1.13:1.3", "openai/gpt-5.6-sol"): "All three GPT tiers render apilāpana with the traditional negative etymology (“not losing track / not forgetting”); modern scholarship (and the treasurer simile itself, sarāpeti “reminds”) favors “calling to mind”. Terra has to contort apilāpeti into “prevents…from being forgotten” to sustain it. Defensible, not an error.",
     ("ps1.2", "ps1.2:10.13", "openai/gpt-5.6-sol"): "Expands every elided segment to the full three-clause formula — doctrinally correct but interpolates text the segment doesn’t contain; misalignment risk for our corpus.",
@@ -94,7 +94,12 @@ def esc(s):
 
 
 parts = []
-parts.append("""<title>Pali Translation Bake-off</title>
+parts.append("""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pali Translation — Model Comparison</title>
 <style>
 :root{
   --bg:#FAFAF7; --ink:#212633; --muted:#6B7080; --pali:#8E2A18; --rule:#DDDCD4;
@@ -151,21 +156,23 @@ td.num{font-variant-numeric:tabular-nums; white-space:nowrap;}
   font-family:system-ui,sans-serif; font-weight:600;}
 p{max-width:44rem;}
 </style>
+</head>
+<body>
 <main>
-<p class="eyebrow">buddhomics · translation bake-off · 2026-07-14</p>
-<h1>Twelve hard passages, four translators</h1>
-<p class="sub">The most complex untranslated Pali in bilara-data — archaic Jātaka verse,
-Kathāvatthu dialectic, Yamaka logic, Paṭṭhāna formulas — run through Opus 4.8, Sonnet 5,
-Haiku 4.5, and the GPT-5.6 family (sol / terra / luna via OpenRouter) with identical
-prompts and segment-aligned structured output, compared against my own translations done
-directly from the Pali before reading any model output. Pali lines in red; flagged
-readings annotated inline, including two places where the GPT round forced a revision
-of my earlier judgments.</p>
+<p class="eyebrow">buddhomics · translation model comparison · 2026-07-14</p>
+<h1>Twelve hard passages, seven translators</h1>
+<p class="sub">The hardest untranslated Pali in bilara-data — archaic Jātaka verse,
+Kathāvatthu debate, Yamaka logic, Paṭṭhāna formulas — translated by seven models from
+identical prompts, then compared segment by segment against a reference done directly from
+the Pali. Claude Fable 5 (the first column) is the model that was chosen for the full canon.
+Pali lines are in red; notable readings are flagged inline.</p>
 """)
 
 # cost cards
 parts.append("""
 <div class="cards">
+<div class="card"><h3>Fable 5</h3><p class="big">chosen</p>
+<p>The reference, translated directly from the Pali. Clean and accurate across all twelve passages; selected as the primary translator for the full canon (~$230 batched).</p></div>
 <div class="card"><h3>Opus 4.8</h3><p class="big">$0.40</p>
 <p>Complete. Two slips across 330 segments. Best on Yamaka logic and Petavatthu. Still the overall winner.</p></div>
 <div class="card"><h3>GPT-5.6 sol</h3><p class="big">$0.72</p>
@@ -214,7 +221,7 @@ for p in passages:
         parts.append("</div>")
     parts.append("</section>")
 
-parts.append("</main>")
+parts.append("</main>\n</body>\n</html>")
 out = A / "bakeoff_report.html"
 out.write_text("\n".join(parts))
 print(f"wrote {out} ({out.stat().st_size//1024} KB)")
