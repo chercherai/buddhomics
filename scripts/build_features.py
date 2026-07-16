@@ -94,9 +94,10 @@ def main() -> None:
             subpath=r["subpath"], n=r["n_segments"],
             x=round(float(xy[i, 0]), 3), y=round(float(xy[i, 1]), 3),
             tx=round(float(txy[i, 0]), 3), ty=round(float(txy[i, 1]), 3),
-            # commentary top-terms are suppressed so no licensed content sits in
-            # the public map.json (the text is only in the obfuscated reader JSON)
-            terms=[] if commentary else top_terms[i],
+            # commentary top-terms are included so the commentary links to the
+            # concept map (an index of Pali terms, not the running text — the
+            # obfuscated reader JSON still holds the only servable full text)
+            terms=top_terms[i],
         )
         if commentary:
             p["kind"] = "commentary"

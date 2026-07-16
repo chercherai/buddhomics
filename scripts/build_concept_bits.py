@@ -28,8 +28,6 @@ def tokenize(text: str) -> list[str]:
 def main() -> None:
     pts = json.loads((A / "map.json").read_text())
     uids = [p["uid"] for p in pts]
-    # commentary kept out of served indexes (licensing) — aligned all-zero columns
-    comm = {p["uid"] for p in pts if p.get("kind") == "commentary"}
     terms = [c["t"] for c in json.loads((A / "concepts.json").read_text())]
     from pipeline_input import read_segments
     segs = read_segments()
@@ -39,7 +37,10 @@ def main() -> None:
         .agg(pl.col("pali").str.join(" ").alias("text"))
         .iter_rows()
     )
-    corpus = ["" if u in comm else texts.get(u, "") for u in uids]
+    # commentary is included so it links into the concept map — this is a
+    # term-incidence index (which concept words a text uses), not the running
+    # text, which stays only in the obfuscated reader JSON
+    corpus = [texts.get(u, "") for u in uids]
 
     vec = CountVectorizer(analyzer=tokenize, binary=True, vocabulary=terms)
     X = vec.fit_transform(corpus)          # docs x terms, binary

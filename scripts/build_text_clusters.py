@@ -40,9 +40,13 @@ def main() -> None:
             members = [pts[i] for i in idx]
             term_ct = Counter(t for m in members for t in m["terms"])
             sub_ct = Counter(m["subpath"] for m in members)
+            # sample section/text titles — the strongest signal for what a
+            # cluster is (esp. commentary, whose titles name the commented text)
+            title_ct = Counter(m["te"].split(" · ")[-1] for m in members if m.get("te"))
             clusters.append({
                 "t": term_ct.most_common(1)[0][0] if term_ct else "?",
                 "terms": [t for t, _ in term_ct.most_common(15)],
+                "titles": [t for t, _ in title_ct.most_common(8)],
                 "sub": ", ".join(f"{s} ({n})" for s, n in sub_ct.most_common(4)),
                 "uids": [m["uid"] for m in members[:5]],
                 "x": round(float(xy[idx, 0].mean()), 2),
@@ -63,8 +67,9 @@ def main() -> None:
     for li, lvl in enumerate(levels):
         lines = []
         for i, c in enumerate(lvl["clusters"]):
-            lines.append(f"Cluster {i} [{c['n']} texts; collections: {c['sub']}; "
-                         f"e.g. {', '.join(c['uids'])}]: {', '.join(c['terms'])}")
+            titles = f" titles: {'; '.join(c['titles'])}." if c["titles"] else ""
+            lines.append(f"Cluster {i} [{c['n']} texts; collections: {c['sub']};"
+                         f"{titles} e.g. {', '.join(c['uids'])}]: {', '.join(c['terms'])}")
         (sp / f"clusters_T{li}.txt").write_text("\n".join(lines))
     print("wrote text_clusters.json + clusters_T0/1/2.txt")
 

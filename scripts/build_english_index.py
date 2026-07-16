@@ -28,8 +28,6 @@ def tokenize(text: str) -> list[str]:
 def main() -> None:
     pts = json.loads((A / "map.json").read_text())
     uids = [p["uid"] for p in pts]
-    # commentary kept out of served indexes (licensing) — aligned all-zero columns
-    comm = {p["uid"] for p in pts if p.get("kind") == "commentary"}
     from pipeline_input import read_segments
     segs = read_segments()
     texts = dict(
@@ -38,7 +36,9 @@ def main() -> None:
         .agg(pl.col("english").str.join(" ").alias("text"))
         .iter_rows()
     )
-    corpus = ["" if u in comm else texts.get(u, "") for u in uids]
+    # commentary included so it links into the concept map's English mode — a
+    # word-incidence index, not the running translation (obfuscated in reader)
+    corpus = [texts.get(u, "") for u in uids]
 
     vec = CountVectorizer(analyzer=tokenize, binary=True, min_df=20, max_df=2500)
     X = vec.fit_transform(corpus)

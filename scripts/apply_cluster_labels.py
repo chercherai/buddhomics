@@ -27,6 +27,7 @@ def main() -> None:
             if lab:
                 cl["t"] = lab.strip()
             cl.pop("terms", None)
+            cl.pop("titles", None)
     (A / TARGET).write_text(json.dumps(cc, ensure_ascii=False))
     print(f"applied labels to {TARGET}; sample coarse:",
           ", ".join(c["t"] for c in cc["levels"][0]["clusters"][:6]))
