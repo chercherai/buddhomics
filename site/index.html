@@ -138,6 +138,13 @@ canvas{width:100%; height:100%; display:block; border:1px solid var(--rule);
   max-width:46%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
 .rnav button:hover{background:var(--card);}
 .rnav button.spacer{border-color:transparent; visibility:hidden; cursor:default;}
+.navlist{padding:.3rem 0; font-family:system-ui,sans-serif;}
+.navitem{display:flex; justify-content:space-between; gap:1rem; align-items:baseline;
+  padding:.45rem .9rem; cursor:pointer; border-bottom:1px solid var(--rule); font-size:.9rem;}
+.navitem:last-child{border-bottom:0;}
+.navitem:hover{background:var(--card);}
+.navitem.cur{background:var(--card); color:var(--accent); font-weight:600;}
+.navcount{color:var(--muted); font-size:.75rem; white-space:nowrap;}
 #rbody{overflow-y:auto; padding:.7rem .9rem 2rem; line-height:1.5; font-size:.9rem; flex:1;}
 #rbody h3{font-family:system-ui,sans-serif; font-size:.66rem; letter-spacing:.09em;
   text-transform:uppercase; color:var(--muted); margin:.9rem 0 .3rem;}
@@ -274,6 +281,7 @@ const BOOK_ORDER = ["pli-tv-bu-vb", "pli-tv-bi-vb", "pli-tv-kd", "pli-tv-pvr",
   "kn/ne", "kn/pe", "kn/mil", "ds", "vb", "dt", "pp", "kv", "ya", "patthana"];
 const BOOK_RANK = new Map(BOOK_ORDER.map((k, i) => [k, i]));
 const BOOK_NAMES = {"dn": "Dīgha", "mn": "Majjhima", "sn": "Saṁyutta", "an": "Aṅguttara",
+  "kn": "Khuddaka",
   "kn/kp": "Khuddakapāṭha", "kn/dhp": "Dhammapada", "kn/ud": "Udāna", "kn/iti": "Itivuttaka",
   "kn/snp": "Suttanipāta", "kn/vv": "Vimānavatthu", "kn/pv": "Petavatthu",
   "kn/thag": "Theragāthā", "kn/thig": "Therīgāthā", "kn/tha-ap": "Thera-apadāna",
@@ -286,6 +294,24 @@ const BOOK_NAMES = {"dn": "Dīgha", "mn": "Majjhima", "sn": "Saṁyutta", "an": 
   "pli-tv-kd": "Khandhaka", "pli-tv-pvr": "Parivāra"};
 const bookLabel = p => BOOK_NAMES[bookKey(p)] || (p.subpath || p.nikaya || "").split("/").pop();
 const bookRank = p => BOOK_RANK.has(bookKey(p)) ? BOOK_RANK.get(bookKey(p)) : 999;
+// hierarchical tree for the reader's ^ navigator, from basket + subpath
+const BASKET_NAMES = {sutta: "Discourses", vinaya: "Discipline", abhidhamma: "Abhidhamma"};
+const groupChildren = new Map();   // node key -> ordered child keys ("" = baskets)
+const groupDocs = new Map();       // leaf group key -> ordered docs
+let navList = null;                // null = reading a text; else {parent, items, cursor}
+const leafKey = p => [p.basket, ...(p.subpath || "").split("/").filter(Boolean)].join("/");
+const parentKey = k => k.split("/").slice(0, -1).join("/");
+const nodeName = k => {
+  const segs = k.split("/"), seg = segs[segs.length - 1];
+  if (segs.length === 1) return BASKET_NAMES[seg] || seg;
+  const after = segs.slice(1).join("/");
+  if (BOOK_NAMES[after]) return BOOK_NAMES[after];
+  if (BOOK_NAMES[seg]) return BOOK_NAMES[seg];
+  const m = seg.match(/^([^\d]+?)[\s-]*(\d.*)$/);
+  if (m) return (m[1].length <= 3 ? m[1].toUpperCase() : m[1][0].toUpperCase() + m[1].slice(1))
+    + " " + m[2];
+  return seg;
+};
 const READER_NAMES = {sujato:"Bhikkhu Sujato", brahmali:"Bhikkhu Brahmali",
   kelly:"John Kelly", soma:"Bhikkhu Soma", patton:"Charles Patton",
   suddhaso:"Bhikkhu Suddhāso", anandajoti:"Bhikkhu Ānandajoti", kovilo:"Bhikkhu Kovilo",
@@ -372,6 +398,19 @@ Promise.all([
   readingOrder = [...docs].sort((a, b) =>
     bookRank(a) - bookRank(b) || natKey(a.uid).localeCompare(natKey(b.uid)));
   readingOrder.forEach((p, i) => readIdx.set(p, i));
+  for (const p of readingOrder){   // build the basket→…→group→text tree in reading order
+    const segs = [p.basket, ...(p.subpath || "").split("/").filter(Boolean)];
+    let key = "", parent;
+    for (const s of segs){
+      parent = key; key = key ? key + "/" + s : s;
+      let ch = groupChildren.get(parent);
+      if (!ch){ ch = []; groupChildren.set(parent, ch); }
+      if (ch[ch.length - 1] !== key && !ch.includes(key)) ch.push(key);
+    }
+    let g = groupDocs.get(key);
+    if (!g){ g = []; groupDocs.set(key, g); }
+    g.push(p);
+  }
   CC.fit(); CD.fit(); CC.resize(); CD.resize();
   buildLegend(); buildTaxo(tax); markHd();
 });
@@ -1027,7 +1066,7 @@ rhead.querySelector(".rview").addEventListener("click", e => {
   readerView = b.dataset.view;
   for (const btn of rhead.querySelectorAll(".rview button"))
     btn.setAttribute("aria-pressed", btn === b);
-  if (readerDoc) renderReaderBody();
+  if (readerDoc && !navList) renderReaderBody();
 });
 const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 // bilara/machine text carries inline markup: render <b>/<i>/<em> as formatting,
@@ -1069,34 +1108,87 @@ function relitReader(){
 // machine = square). Default activates the best translator; if that's a machine
 // model, all machine models come on together (the machine layer is disjoint per
 // segment, so this completes the doc). The user can then show any combination.
-// reader pager: ‹ prev · ↑ next book · next › (canonical reading order)
-function nextBook(){    // first text of the next book (organizational level up)
-  const i = readIdx.get(readerPoint);
-  if (i === undefined) return null;
-  const cur = bookKey(readerPoint);
-  for (let j = i + 1; j < readingOrder.length; j++)
-    if (bookKey(readingOrder[j]) !== cur) return readingOrder[j];
-  return null;
-}
+// reader navigator: ‹ / › cycle the current level, ↑ shows the level above as a
+// list, clicking a list item descends; the deepest level is the texts themselves.
+// a node is a leaf group (holds texts directly) only if it has no sub-nodes;
+// a node with children is always a branch (rare stray docs on it are skipped)
+const isLeafGroup = k => groupDocs.has(k) && !groupChildren.has(k);
+// a level's items: sub-nodes (strings) plus any texts sitting directly on a
+// branch (doc objects), so mixed-depth collections (Vinaya) lose nothing
+const itemsOf = parent => {
+  const kids = groupChildren.get(parent) || [];
+  return (kids.length && groupDocs.has(parent)) ? [...kids, ...groupDocs.get(parent)] : kids;
+};
+const itemLabel = it => typeof it === "string" ? nodeName(it) : it.uid;
+const navBtn = (nav, label, title) =>
+  `<button data-nav="${nav}" title="${escA(title)}">${label}</button>`;
+const NAV_SPACER = '<button class="spacer" disabled></button>';
+
 function navButtons(){
-  const i = readIdx.get(readerPoint);
-  if (i === undefined) return "";
-  const prev = readingOrder[i - 1], next = readingOrder[i + 1], up = nextBook();
-  const btn = (nav, label, title) => `<button data-nav="${nav}" title="${escA(title)}">${label}</button>`;
-  const spacer = '<button class="spacer" disabled></button>';
-  return (prev ? btn("-1", `‹ ${esc(prev.uid)}`, "previous: " + prev.uid) : spacer)
-    + (up ? btn("up", `↑ ${esc(bookLabel(up))}`, "next book: " + bookLabel(up)) : spacer)
-    + (next ? btn("1", `${esc(next.uid)} ›`, "next: " + next.uid) : spacer);
+  if (navList){
+    const {parent, items, cursor} = navList;
+    const prev = items[cursor - 1], next = items[cursor + 1];
+    return (prev ? navBtn("-1", `‹ ${esc(itemLabel(prev))}`, itemLabel(prev)) : NAV_SPACER)
+      + (parent ? navBtn("up", `↑ ${esc(nodeName(parent))}`, "up") : NAV_SPACER)
+      + (next ? navBtn("1", `${esc(itemLabel(next))} ›`, itemLabel(next)) : NAV_SPACER);
+  }
+  if (!readerPoint) return "";
+  const g = groupDocs.get(leafKey(readerPoint)) || [];
+  const gi = g.indexOf(readerPoint), prev = g[gi - 1], next = g[gi + 1];
+  const container = leafKey(readerPoint);
+  return (prev ? navBtn("-1", `‹ ${esc(prev.uid)}`, "previous: " + prev.uid) : NAV_SPACER)
+    + navBtn("up", `↑ ${esc(nodeName(container))}`, "up to " + nodeName(container))
+    + (next ? navBtn("1", `${esc(next.uid)} ›`, "next: " + next.uid) : NAV_SPACER);
+}
+function enterList(parent, cursorKey){
+  const items = itemsOf(parent);
+  navList = {parent, items, cursor: Math.max(0, items.indexOf(cursorKey))};
+  renderNavList();
+}
+function renderNavList(){
+  const {parent, items, cursor} = navList;
+  rhead.querySelector(".ruid").textContent = parent ? nodeName(parent) : "Canon";
+  rhead.querySelector(".rmeta").textContent = `${items.length} sections`;
+  rhead.querySelector(".rsc").hidden = true;
+  rhead.querySelector(".rtrans").innerHTML = "";
+  document.getElementById("rnav-top").innerHTML = navButtons();
+  rbody.innerHTML = '<div class="navlist">' + items.map((it, i) => {
+    const cur = i === cursor ? " cur" : "";
+    if (typeof it !== "string")
+      return `<div class="navitem${cur}" data-uid="${escA(it.uid)}">`
+        + `<span>${esc(it.uid)}</span><span class="navcount">text</span></div>`;
+    const leaf = isLeafGroup(it);
+    const n = leaf ? groupDocs.get(it).length : (groupChildren.get(it) || []).length;
+    return `<div class="navitem${cur}" data-key="${escA(it)}">`
+      + `<span>${esc(nodeName(it))}</span>`
+      + `<span class="navcount">${n}${leaf ? " texts" : " ›"}</span></div>`;
+  }).join("") + "</div>";
+  const cur = rbody.querySelector(".navitem.cur");
+  if (cur) cur.scrollIntoView({block: "nearest"});
+}
+function descend(key){
+  if (isLeafGroup(key)) selectDoc(groupDocs.get(key)[0]);   // opens reader (text mode)
+  else enterList(key, (groupChildren.get(key) || [])[0]);
 }
 function readerNav(nav){
-  let target = null;
-  if (nav === "up") target = nextBook();
-  else { const i = readIdx.get(readerPoint); if (i !== undefined) target = readingOrder[i + nav]; }
-  if (target) selectDoc(target);
+  if (navList){
+    if (nav === "up"){ if (navList.parent) enterList(parentKey(navList.parent), navList.parent); }
+    else { const c = navList.cursor + nav;
+      if (c >= 0 && c < navList.items.length){ navList.cursor = c; renderNavList(); } }
+    return;
+  }
+  if (nav === "up"){ const g = leafKey(readerPoint); enterList(parentKey(g), g); return; }
+  const g = groupDocs.get(leafKey(readerPoint)) || readingOrder;
+  const gi = g.indexOf(readerPoint);
+  if (gi >= 0 && g[gi + nav]) selectDoc(g[gi + nav]);
 }
 document.getElementById("reader").addEventListener("click", e => {
   const b = e.target.closest("button[data-nav]");
-  if (b) readerNav(b.dataset.nav === "up" ? "up" : +b.dataset.nav);
+  if (b){ readerNav(b.dataset.nav === "up" ? "up" : +b.dataset.nav); return; }
+  const it = e.target.closest(".navitem");
+  if (!it) return;
+  if (it.dataset.uid){ const p = docs.find(d => d.uid === it.dataset.uid); if (p) selectDoc(p); }
+  else if (it.dataset.key) descend(it.dataset.key);
 });
 
 function defaultActive(doc){
@@ -1152,7 +1244,7 @@ async function openReader(p){
     `${p.basket} · ${p.subpath || p.nikaya} · ${p.n} segments`;
   const sc = rhead.querySelector(".rsc");
   sc.hidden = false; sc.href = "https://suttacentral.net/" + p.uid;
-  readerPoint = p;
+  readerPoint = p; navList = null;   // opening a text drops out of list mode
   document.getElementById("rnav-top").innerHTML = navButtons();
   rhead.querySelector(".rtrans").innerHTML = "";
   rbody.innerHTML = '<p class="note">loading…</p>';
