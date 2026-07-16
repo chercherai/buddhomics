@@ -832,7 +832,7 @@ function termEnglish(t){
 function docTermGloss(p){
   return p.terms.slice(0, 5).map(t => {
     const en = termEnglish(t);
-    return en ? `${esc(t)} <span class="g">| ${esc(en)}</span>` : esc(t);
+    return en ? `${esc(t)} <span class="g">${esc(en)}</span>` : esc(t);
   }).join(" · ");
 }
 const CD = makeMap("cd", "td", {
