@@ -26,16 +26,20 @@ def tokenize(text: str) -> list[str]:
 
 
 def main() -> None:
-    uids = [p["uid"] for p in json.loads((A / "map.json").read_text())]
+    pts = json.loads((A / "map.json").read_text())
+    uids = [p["uid"] for p in pts]
+    # commentary kept out of served indexes (licensing) — aligned all-zero columns
+    comm = {p["uid"] for p in pts if p.get("kind") == "commentary"}
     terms = [c["t"] for c in json.loads((A / "concepts.json").read_text())]
-    segs = pl.read_parquet(A / "segments.parquet")
+    from pipeline_input import read_segments
+    segs = read_segments()
     texts = dict(
         segs.filter(pl.col("pali").is_not_null())
         .group_by("uid")
         .agg(pl.col("pali").str.join(" ").alias("text"))
         .iter_rows()
     )
-    corpus = [texts[u] for u in uids]
+    corpus = ["" if u in comm else texts.get(u, "") for u in uids]
 
     vec = CountVectorizer(analyzer=tokenize, binary=True, vocabulary=terms)
     X = vec.fit_transform(corpus)          # docs x terms, binary

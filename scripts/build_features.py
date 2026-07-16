@@ -31,12 +31,15 @@ def tokenize(text: str) -> list[str]:
 
 
 def main() -> None:
-    segs = pl.read_parquet(A / "segments.parquet")
+    from pipeline_input import read_segments
+    segs = read_segments()
+    kindcol = ["kind"] if "kind" in segs.columns else []
     docs = (
         segs.filter(pl.col("pali").is_not_null())
         .group_by("uid", maintain_order=True)
         .agg(
             pl.first("basket"), pl.first("nikaya"), pl.first("subpath"),
+            *[pl.first(k) for k in kindcol],
             pl.col("pali").str.concat(" ").alias("text"),
             pl.len().alias("n_segments"),
         )
@@ -85,15 +88,19 @@ def main() -> None:
 
     points = []
     for i, r in enumerate(docs.iter_rows(named=True)):
-        points.append(
-            dict(
-                uid=r["uid"], basket=r["basket"], nikaya=r["nikaya"],
-                subpath=r["subpath"], n=r["n_segments"],
-                x=round(float(xy[i, 0]), 3), y=round(float(xy[i, 1]), 3),
-                tx=round(float(txy[i, 0]), 3), ty=round(float(txy[i, 1]), 3),
-                terms=top_terms[i],
-            )
+        commentary = r.get("kind") == "commentary"
+        p = dict(
+            uid=r["uid"], basket=r["basket"], nikaya=r["nikaya"],
+            subpath=r["subpath"], n=r["n_segments"],
+            x=round(float(xy[i, 0]), 3), y=round(float(xy[i, 1]), 3),
+            tx=round(float(txy[i, 0]), 3), ty=round(float(txy[i, 1]), 3),
+            # commentary top-terms are suppressed so no licensed content sits in
+            # the public map.json (the text is only in the obfuscated reader JSON)
+            terms=[] if commentary else top_terms[i],
         )
+        if commentary:
+            p["kind"] = "commentary"
+        points.append(p)
     (A / "map.json").write_text(json.dumps(points, ensure_ascii=False))
     np.save(A / "doc_svd.npy", Z)
     (A / "doc_index.json").write_text(

@@ -188,7 +188,8 @@ TAXONOMY = [
 
 def main() -> None:
     uids = [p["uid"] for p in json.loads((A / "map.json").read_text())]
-    segs = pl.read_parquet(A / "segments.parquet")
+    from pipeline_input import read_segments
+    segs = read_segments()
     texts = dict(
         segs.filter(pl.col("pali").is_not_null())
         .group_by("uid")

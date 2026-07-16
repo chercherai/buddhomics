@@ -18,7 +18,8 @@ A = REPO / "artifacts"
 
 
 def main() -> None:
-    seg = pl.read_parquet(A / "segments.parquet")
+    from pipeline_input import read_segments
+    seg = read_segments()
     hdr = (seg.filter(pl.col("segment_id").str.contains(r":0\."))
            .sort(["uid", "seq"])
            .group_by("uid", maintain_order=True)
@@ -35,10 +36,20 @@ def main() -> None:
     titles = {uid: (join(en), join(pa))
               for uid, pa, en in hdr.select("uid", "pali", "english").iter_rows()}
 
+    # commentary segments have no :0. header — use the bibliographic displayName
+    # (a title, not body text) from dharmanexus so they're identifiable/searchable
+    comm_titles = {}
+    dnf = REPO / "data" / "dharmanexus-pali" / "PA_files.json"
+    if dnf.exists():
+        comm_titles = {e["filename"]: e.get("displayName", "")
+                       for e in json.loads(dnf.read_text())}
+
     pts = json.loads((A / "map.json").read_text())
     n = 0
     for p in pts:
         te, tl = titles.get(p["uid"], ("", ""))
+        if not te and p.get("kind") == "commentary":
+            te = comm_titles.get(p["uid"], "")
         if te:
             p["te"] = te
         if tl:

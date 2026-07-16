@@ -245,18 +245,22 @@ footer a{color:var(--accent)}
 <script>
 const DCOLORS = {
   dn:"#3D5A80", mn:"#5C7FA6", sn:"#7FA0C4", an:"#A3BEDA",
-  kn:"#8E2A18", vinaya:"#3D6B4F", abhidhamma:"#9A7B2F"
+  kn:"#8E2A18", vinaya:"#3D6B4F", abhidhamma:"#9A7B2F",
+  "aṭṭhakathā":"#C0562F", "ṭīkā":"#2E8B8F", "anya":"#7A5FA6"
 };
 const NAMES = {
   dn:"Dīgha Nikāya", mn:"Majjhima Nikāya", sn:"Saṁyutta Nikāya",
-  an:"Aṅguttara Nikāya", kn:"Khuddaka Nikāya", vinaya:"Vinaya", abhidhamma:"Abhidhamma"
+  an:"Aṅguttara Nikāya", kn:"Khuddaka Nikāya", vinaya:"Vinaya", abhidhamma:"Abhidhamma",
+  "aṭṭhakathā":"Aṭṭhakathā", "ṭīkā":"Ṭīkā", "anya":"Anya (Visuddhimagga…)"
 };
+const COMM_GENRE = new Set(["aṭṭhakathā", "ṭīkā", "anya"]);
 const GCOLORS = {
   "aggregates & elements": "#3D5A80", "dependent origination": "#8E2A18",
   "path & wings": "#3D6B4F", "meditation": "#7A4A9E", "four truths": "#B5541C",
   "divine abidings": "#C48A00", "ethics & training": "#2E7D82", "liberation": "#A83267",
 };
-const groupOf = p => p.basket === "vinaya" ? "vinaya"
+const groupOf = p => COMM_GENRE.has(p.basket) ? p.basket
+  : p.basket === "vinaya" ? "vinaya"
   : p.basket === "abhidhamma" ? "abhidhamma" : p.nikaya;
 
 let terms = [], docs = [], bits = null, BPR = 0, dict = null, clusters = null, textClusters = null;
@@ -295,7 +299,8 @@ const BOOK_NAMES = {"dn": "Dīgha", "mn": "Majjhima", "sn": "Saṁyutta", "an": 
 const bookLabel = p => BOOK_NAMES[bookKey(p)] || (p.subpath || p.nikaya || "").split("/").pop();
 const bookRank = p => BOOK_RANK.has(bookKey(p)) ? BOOK_RANK.get(bookKey(p)) : 999;
 // hierarchical tree for the reader's ^ navigator, from basket + subpath
-const BASKET_NAMES = {sutta: "Discourses", vinaya: "Discipline", abhidhamma: "Abhidhamma"};
+const BASKET_NAMES = {sutta: "Discourses", vinaya: "Discipline", abhidhamma: "Abhidhamma",
+  "aṭṭhakathā": "Aṭṭhakathā", "ṭīkā": "Ṭīkā", "anya": "Anya (Visuddhimagga…)"};
 const groupChildren = new Map();   // node key -> ordered child keys ("" = baskets)
 const groupDocs = new Map();       // leaf group key -> ordered docs
 let navList = null;                // null = reading a text; else {parent, items, cursor}
@@ -315,12 +320,12 @@ const nodeName = k => {
 const READER_NAMES = {sujato:"Bhikkhu Sujato", brahmali:"Bhikkhu Brahmali",
   kelly:"John Kelly", soma:"Bhikkhu Soma", patton:"Charles Patton",
   suddhaso:"Bhikkhu Suddhāso", anandajoti:"Bhikkhu Ānandajoti", kovilo:"Bhikkhu Kovilo",
-  "claude-fable-5":"Claude Fable 5", "gpt-5.6-sol":"GPT-5.6"};
+  "claude-fable-5":"Claude Fable 5", "gpt-5.6-sol":"GPT-5.6", "dharmamitra":"DharmaMitra"};
 // per-translator marker colours (copy-paste-safe: empty spans). Humans render as
 // circles, machines as squares (.sq) — see readerKind, set per open doc.
 const READER_DOT = {sujato:"#60a5fa", brahmali:"#f59e0b", kelly:"#4ade80", soma:"#f472b6",
   suddhaso:"#a3e635", kovilo:"#fb923c", anandajoti:"#e879f9", patton:"#22d3ee",
-  "claude-fable-5":"#a78bfa", "gpt-5.6-sol":"#2dd4bf"};
+  "claude-fable-5":"#a78bfa", "gpt-5.6-sol":"#2dd4bf", "dharmamitra":"#6aa84f"};
 let readerKind = {};   // translator id -> "human"|"machine", for the open doc
 const provMark = id => `<span class="mark${readerKind[id] === "machine" ? " sq" : ""}" `
   + `style="background:${READER_DOT[id] || "#888"}" title="${escA(READER_NAMES[id] || id)}"></span>`;
@@ -436,7 +441,7 @@ Promise.all([
   fetch("english_terms.json", {cache:"no-cache"}).then(r => r.json()),
   fetch("english_bits.bin", {cache:"no-cache"}).then(r => r.arrayBuffer()),
 ]).then(([w, b]) => {
-  enWords = w; enBits = new Uint8Array(b); EBPR = Math.ceil(6959 / 8);
+  enWords = w; enBits = new Uint8Array(b); EBPR = Math.ceil(docs.length / 8);
 });
 function docsOfEnglish(q){
   // union of docs for every indexed English word containing q
@@ -1073,6 +1078,30 @@ const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>
 // drop <a>/<j> (keep their inner text) so no raw tags ever show in the reader
 const richText = s => esc(String(s).replace(/<\/?(?:a|j)\b[^>]*>/gi, ""))
   .replace(/&lt;(\/?(?:b|i|em))&gt;/gi, "<$1>");
+// deobfuscate served commentary text (matches scripts/obfusc.py). Not security —
+// keeps the licensed text out of search indexes / casual scraping; reader decodes.
+const COMM_SALT = "buddhomics-comm-v1";
+const _fnv = s => { let x = 2166136261;
+  for (const b of new TextEncoder().encode(s)){ x ^= b; x = Math.imul(x, 16777619) >>> 0; }
+  return x; };
+function deobf(b64, sid){
+  const bin = atob(b64), data = new Uint8Array(bin.length);
+  let s = _fnv(COMM_SALT + sid) >>> 0 || 1;
+  for (let i = 0; i < bin.length; i++){
+    s = (s ^ ((s << 13) >>> 0)) >>> 0; s = (s ^ (s >>> 17)) >>> 0; s = (s ^ ((s << 5) >>> 0)) >>> 0;
+    data[i] = bin.charCodeAt(i) ^ (s & 0xff);
+  }
+  return new TextDecoder().decode(data);
+}
+function decodeDoc(doc){
+  if (!doc.obf || doc._dec) return;
+  for (const seg of doc.segs){
+    const sid = seg[0];
+    if (seg[1]) seg[1] = deobf(seg[1], sid);
+    const td = seg[2]; for (const k in td) td[k] = deobf(td[k], sid);
+  }
+  doc._dec = true;
+}
 const WORD = /[A-Za-zāīūṁṃṅñṭḍṇḷĀĪŪṀṂṄÑṬḌṆḶ’']+/g;
 
 function paliSpans(s){
@@ -1259,6 +1288,7 @@ async function openReader(p){
       textCache.set(p.uid, doc);
       if (textCache.size > 40) textCache.delete(textCache.keys().next().value);
     }
+    decodeDoc(doc);   // in-place deobfuscation of commentary text
     readerDoc = doc;
     readerKind = {}; doc.translators.forEach(t => { readerKind[t.id] = t.kind; });
     readerActive = defaultActive(doc);
