@@ -29,8 +29,8 @@ pipeline's `build_tree.py` is a start), and an embedding-backbone upgrade are tr
 ## Architecture
 
 Analysis runs locally (Python + uv), producing static JSON/parquet artifacts that are
-rsynced to `~/buddhomics.cherch.org` on the shared host (`ssh cherch`). The site is a single
-dependency-free HTML/JS page rendering both maps on `<canvas>`; the server is a dumb host.
+rsynced to the hosts (see [Deploy](#deploy)). The site is a single dependency-free HTML/JS
+page rendering both maps on `<canvas>`; the server is a dumb host.
 
 ## Substrate
 
@@ -79,7 +79,9 @@ uv run scripts/build_dict_shards.py   # DPD sharded + DPPN names + concept Engli
 uv run scripts/build_pali_index.py    # DPD-lemma Pali full-text search index (sharded)
 uv run scripts/build_english_index.py # English-translation search index (vocab + bitmatrix)
 cp artifacts/map.json artifacts/concepts.json artifacts/taxonomy.json artifacts/tree.svg site/
+# deploy — both mirrors, see Deploy below
 rsync -avz site/ cherch:~/buddhomics.cherch.org/
+rsync -avz site/ dreamhost:~/northinglab.com/buddhomics/
 ```
 
 The site (`site/`) is dependency-free static HTML/JS, live at
@@ -89,6 +91,33 @@ space, linked by a full-text term-document bitmatrix. Click a term to see its
 texts; click a text to read it; click any Pali word in the reader for an NCPED
 definition and its place on the concept map. (UMAP coords remain in map.json;
 tree inference still runs in the pipeline via build_tree.py.)
+
+## Deploy
+
+`site/` is mirrored to two shared hosts (both DreamHost, different accounts, same box).
+Deploying means copying the whole directory to each:
+
+| URL | rsync target |
+| --- | --- |
+| <https://buddhomics.cherch.org> | `cherch:~/buddhomics.cherch.org/` |
+| <https://northinglab.com/buddhomics/> | `dreamhost:~/northinglab.com/buddhomics/` |
+
+```sh
+for T in cherch:~/buddhomics.cherch.org dreamhost:~/northinglab.com/buddhomics; do
+  rsync -avz site/ "$T/"
+done
+```
+
+Deploy to **both** or they drift. Dry-run with `-n` first; `site/texts/` alone is ~860 MB,
+so a full first sync is slow but incremental ones move only what changed.
+
+**No `--delete`.** Each host carries files that don't exist in `site/` — DreamHost's
+`.dh-diag` symlink and placeholder favicons on cherch — and `--delete` would remove them.
+That means a file removed from `site/` will linger on the hosts until deleted by hand.
+
+Everything is static: the hosts run no server-side code, so nothing in the site may
+depend on it. The northinglab copy is served from a subdirectory, so all paths in the
+site must stay relative (`texts/…`, not `/texts/…`).
 
 ## License
 
