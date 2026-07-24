@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>buddhomics — print</title>
+<style>
+:root{
+  --paper:#FCFBF8; --ink:#23201B; --soft:#5A5348; --faint:#8C8477; --rule:#DED9CD;
+  --accent:#8E2A18; --chrome-bg:#FAFAF7; --chrome-ink:#212633; --chrome-rule:#DDDCD4;
+  --chrome-card:#F1F0EA;
+}
+@media (prefers-color-scheme: dark){:root{
+  --chrome-bg:#15171D; --chrome-ink:#DEDCD2; --chrome-rule:#2C2F38; --chrome-card:#1C1F27;
+  --accent:#C9A45C;
+}}
+*{box-sizing:border-box}
+/* the sheet is always paper: this page is a preview of the printed object */
+body{margin:0; background:var(--chrome-bg); color:var(--chrome-ink);
+  font-family:"Iowan Old Style","Palatino Linotype",Palatino,"Charis SIL",
+    "Gentium Book Plus","Noto Serif","DejaVu Serif",Georgia,serif;}
+
+/* ---- screen chrome (never printed) ---- */
+#bar{position:sticky; top:0; z-index:5; display:flex; align-items:center; gap:.6rem;
+  flex-wrap:wrap; padding:.55rem 1rem; background:var(--chrome-bg);
+  border-bottom:1px solid var(--chrome-rule);
+  font-family:system-ui,sans-serif; font-size:.78rem;}
+#bar .home{color:var(--accent); text-decoration:none; font-weight:600;}
+#bar .sep{color:var(--chrome-rule);}
+#bar label{color:var(--chrome-ink); opacity:.75; display:inline-flex; align-items:center; gap:.3rem;}
+.toggle{display:inline-flex; border:1px solid var(--chrome-rule); border-radius:6px; overflow:hidden;}
+.toggle button{border:0; background:transparent; color:var(--chrome-ink); opacity:.6;
+  padding:.25rem .65rem; font:inherit; cursor:pointer;}
+.toggle button[aria-pressed="true"]{background:var(--chrome-card); color:var(--accent);
+  opacity:1; font-weight:600;}
+#trs{display:inline-flex; gap:.25rem; flex-wrap:wrap;}
+#trs button{border:1px solid var(--chrome-rule); background:transparent; color:var(--chrome-ink);
+  opacity:.6; padding:.2rem .55rem; border-radius:5px; cursor:pointer; font:inherit;}
+#trs button[aria-pressed="true"]{background:var(--chrome-card); color:var(--accent);
+  opacity:1; font-weight:600; border-color:var(--chrome-card);}
+#doit{margin-left:auto; border:1px solid var(--accent); background:var(--accent); color:#FAFAF7;
+  padding:.3rem .9rem; border-radius:6px; cursor:pointer; font:inherit; font-weight:600;}
+#doit:hover{filter:brightness(1.08);}
+.hint{color:var(--chrome-ink); opacity:.5;}
+
+/* ---- the sheet ---- */
+#sheet{max-width:44rem; margin:1.6rem auto 4rem; padding:3.2rem 3.4rem 2.6rem;
+  background:var(--paper); color:var(--ink); line-height:1.58; font-size:1.02rem;
+  box-shadow:0 1px 3px rgba(0,0,0,.12), 0 8px 26px rgba(0,0,0,.10);}
+
+.work{position:relative;}
+.work + .work{margin-top:3.5rem; padding-top:2.4rem; border-top:1px solid var(--rule);}
+.crumb{font-family:system-ui,sans-serif; font-size:.66rem; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--faint); margin:0 0 .9rem;}
+h1{font-size:1.72rem; font-weight:600; margin:0; line-height:1.2; letter-spacing:.01em;}
+h1 .en{display:block; font-size:1.06rem; font-weight:400; font-style:italic;
+  color:var(--soft); margin-top:.35rem; letter-spacing:0;}
+.byline{font-family:system-ui,sans-serif; font-size:.74rem; color:var(--soft);
+  margin:1rem 0 0; padding-top:.7rem; border-top:1px solid var(--rule);}
+.byline i{font-style:normal; color:var(--faint);}
+.body{margin-top:2.1rem;}
+
+h2{font-size:1.02rem; font-weight:600; margin:2.1rem 0 .9rem; line-height:1.35;
+  break-after:avoid; page-break-after:avoid;}
+h2 .en{display:block; font-weight:400; font-style:italic; color:var(--soft);
+  font-size:.95em; margin-top:.1rem;}
+h2:first-child{margin-top:0;}
+
+.seg{position:relative; margin:0 0 1.05rem;}
+/* the numbers hang in a gutter that is part of the text block: Chrome's paged
+   layout clips anything positioned outside the page box, so a real indent is the
+   only way they survive printing */
+.sn{position:absolute; left:-2.9rem; top:.2em; width:2.5rem; text-align:right;
+  font-family:system-ui,sans-serif; font-size:.6rem; color:var(--faint);
+  font-variant-numeric:tabular-nums; letter-spacing:.02em;}
+body:not(.nums) .sn{display:none;}
+body.nums .body{padding-left:2.9rem;}
+p{margin:0;}
+p + p{margin-top:.42rem;}
+.pali{color:var(--soft); font-size:.97em;}
+.eng{color:var(--ink);}
+.seg.v .pali, .seg.v .eng{padding-left:1.15rem; text-indent:0;}
+.seg.v{break-inside:avoid; page-break-inside:avoid;}
+.seg.v .pali{font-style:italic;}
+.who{font-family:system-ui,sans-serif; font-size:.58rem; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--faint); display:block; margin-bottom:.06rem;}
+.only-one .who{display:none;}
+
+.toc-list{margin-top:1.9rem;}
+.toc-row{display:flex; align-items:baseline; gap:.6rem; text-decoration:none; color:inherit;
+  padding:.28rem 0; border-bottom:1px dotted var(--rule);}
+.toc-t{flex:1;}
+.toc-t i{color:var(--soft); font-size:.93em;}
+.toc-u{font-family:system-ui,sans-serif; font-size:.62rem; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--faint); white-space:nowrap;}
+
+.colophon{margin-top:3rem; padding-top:.9rem; border-top:1px solid var(--rule);
+  font-family:system-ui,sans-serif; font-size:.66rem; line-height:1.65; color:var(--faint);}
+.colophon b{color:var(--soft); font-weight:600;}
+.colophon a{color:var(--faint);}
+.note{color:var(--soft); font-style:italic;}
+.note b{font-style:normal;}
+
+@media (max-width:640px){
+  #sheet{margin:.8rem .5rem 2rem; padding:1.6rem 1.3rem;}
+  .sn{position:static; display:inline; width:auto; text-align:left; margin-right:.4rem;}
+}
+
+/* ---- print ---- */
+@page{ size:letter; margin:19mm 20mm 20mm; }
+@media print{
+  #bar{display:none;}
+  body{background:#fff;}
+  #sheet{max-width:none; margin:0; padding:0; box-shadow:none; background:transparent;
+    font-size:10.6pt; line-height:1.5;}
+  .work{break-before:page; page-break-before:always;}
+  .work:first-child{break-before:auto; page-break-before:avoid;}
+  .work + .work{margin-top:0; padding-top:0; border-top:0;}
+  h1{font-size:17pt;} h1 .en{font-size:11pt;}
+  h2{font-size:11pt;}
+  .body{margin-top:1.6rem;}
+  .sn{left:-11mm; width:9mm; font-size:6.4pt;}
+  body.nums .body{padding-left:11mm;}
+  p{orphans:3; widows:3;}
+  .seg{break-inside:auto;}
+  .colophon{break-before:avoid; page-break-before:avoid; font-size:7.4pt;}
+  a{text-decoration:none; color:inherit;}
+}
+</style>
+</head>
+<body>
+<div id="bar">
+  <a class="home" href="./">← buddhomics</a>
+  <span class="sep">·</span>
+  <span class="toggle" id="views" role="group" aria-label="display">
+    <button data-view="pali">Pali</button>
+    <button data-view="both">Both</button>
+    <button data-view="english">English</button>
+  </span>
+  <span id="trs" role="group" aria-label="translator"></span>
+  <label><input type="checkbox" id="nums"> segment numbers</label>
+  <button id="doit">Print / Save as PDF</button>
+</div>
+<div id="sheet"><p class="note">loading…</p></div>
+<script>
+const P = new URLSearchParams(location.search);
+const UIDS = (P.get("uid") || P.get("uids") || "").split(",").map(s => s.trim()).filter(Boolean);
+const MAX_UIDS = 60;
+let view = ["pali", "both", "english"].includes(P.get("view")) ? P.get("view") : "both";
+let active = new Set((P.get("tr") || "").split(",").map(s => s.trim()).filter(Boolean));
+let nums = P.get("nums") === "1";
+let docs = [];
+
+const NAMES = {sujato:"Bhikkhu Sujato", brahmali:"Bhikkhu Brahmali", kelly:"John Kelly",
+  soma:"Bhikkhu Soma", patton:"Charles Patton", suddhaso:"Bhikkhu Suddhāso",
+  anandajoti:"Bhikkhu Ānandajoti", kovilo:"Bhikkhu Kovilo",
+  "claude-fable-5":"Claude Fable 5", "gpt-5.6-sol":"GPT-5.6", "dharmamitra":"DharmaMitra"};
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const escA = s => esc(s).replace(/"/g,"&quot;");
+// same inline-markup policy as the reader: keep <b>/<i>/<em>, drop <a>/<j> wrappers
+const rich = s => esc(String(s).replace(/<\/?(?:a|j)\b[^>]*>/gi, ""))
+  .replace(/&lt;(\/?(?:b|i|em))&gt;/gi, "<$1>");
+
+// segment ids are uid:chapter.paragraph.sentence — the last component is the
+// sentence, so dropping it recovers the paragraph the translators worked from
+const cut = sid => sid.indexOf(":");
+const tailOf = sid => sid.slice(cut(sid) + 1);
+const isTitleSeg = sid => /^0(\.\d+)?$/.test(tailOf(sid)) && sid.includes(":0.");
+const isHeadSeg = sid => { const t = tailOf(sid); return t === "0" || /\.0$/.test(t); };
+const groupOf = sid => {
+  const c = cut(sid), t = sid.slice(c + 1), i = t.lastIndexOf(".");
+  return sid.slice(0, c) + ":" + (i < 0 ? "" : t.slice(0, i));
+};
+// verse in bilara is not marked up, but it reads unmistakably: short pādas that
+// end on a comma or semicolon. Prose sentences run long and close with . ? " —
+// segments are stitched back into a paragraph with a space, except where the
+// previous one broke mid-word on a dash ("Evaṁ me sutaṁ—" + "ekaṁ samayaṁ…")
+function stitch(lines, verse){
+  const parts = lines.filter(Boolean).map(rich);
+  if (verse) return parts.join("<br>");
+  return parts.reduce((a, b) => a + (/[—–‘“(]$/.test(a) ? "" : " ") + b, "").trim();
+}
+function isVerse(lines){
+  if (lines.length < 2) return false;
+  let long = 0, pada = 0;
+  for (const l of lines){
+    if (l.length > 78) long++;
+    if (/[,;]$/.test(l)) pada++;
+  }
+  return long === 0 && pada / lines.length >= 0.5;
+}
+
+function streamsOf(doc){          // human translators stay separate; the machine
+  const out = [];                 // layers are disjoint per segment, so they merge
+  const mach = [];
+  for (const t of doc.translators){
+    if (!active.has(t.id)) continue;
+    if (t.kind === "machine") mach.push(t.id);
+    else out.push({key: t.id, ids: [t.id], label: NAMES[t.id] || t.name, kind: "human"});
+  }
+  if (mach.length) out.push({key: "machine", ids: mach, kind: "machine",
+    label: mach.map(id => NAMES[id] || id).join(" · ")});
+  return out;
+}
+const pick = (td, ids) => { for (const id of ids){ const v = td[id]; if (v && v.trim()) return v.trim(); } return ""; };
+
+function defaultActive(doc){
+  const a = new Set();
+  if (!doc.translators.length) return a;
+  const prim = doc.default || doc.translators[0].id;
+  a.add(prim);
+  if ((doc.translators.find(t => t.id === prim) || {}).kind === "machine")
+    for (const t of doc.translators) if (t.kind === "machine") a.add(t.id);
+  return a;
+}
+
+function titleParts(doc){
+  const head = [];
+  for (const s of doc.segs){ if (!isTitleSeg(s[0])) break; head.push(s); }
+  const streams = streamsOf(doc);
+  const en = s => pick(s[2], streams.flatMap(x => x.ids)) || "";
+  const pa = s => (s[1] || "").trim();
+  // the title-block segments run outermost-first (collection · book · chapter ·
+  // work). Trailing ones with no English are per-story headings that bilara files
+  // by convention — demote them to the body so "Dhammapada" titles dhp, not the
+  // name of the first story in it
+  let cutAt = head.length - 1;
+  for (let i = head.length - 1; i >= 0; i--) if (en(head[i])){ cutAt = i; break; }
+  head.length = cutAt + 1;
+  const last = head[head.length - 1];
+  const crumb = head.slice(0, -1).map(s => pa(s) || en(s)).filter(Boolean).join(" · ");
+  return {crumb, tPali: (last ? pa(last) : "") || doc.uid, tEng: last ? en(last) : "",
+          skip: head.length, streams};
+}
+
+function titleBlock(doc){
+  const {crumb, tPali, tEng, skip, streams} = titleParts(doc);
+  let out = "";
+  if (crumb) out += `<p class="crumb">${rich(crumb)}</p>`;
+  out += `<h1>${rich(tPali)}`;
+  if (tEng && tEng !== tPali) out += `<span class="en">${rich(tEng)}</span>`;
+  out += `</h1>`;
+  const humans = streams.filter(s => s.kind !== "machine").map(s => esc(s.label));
+  const credit = [];
+  if (humans.length) credit.push("Translated by " + humans.join(" &amp; "));
+  for (const s of streams) if (s.kind === "machine")
+    credit.push(`Machine translation — ${esc(s.label)}`);
+  out += `<p class="byline">${doc.uid.toUpperCase()}`
+    + (credit.length ? ` &middot; ${credit.join(" &middot; ")}` : " &middot; <i>Pali only — no English yet</i>")
+    + `</p>`;
+  return {html: out, skip};
+}
+
+function renderDoc(doc){
+  const {html: head, skip} = titleBlock(doc);
+  const streams = streamsOf(doc);
+  const parts = [];
+  let g = null;                                  // {key, sids, pali:[], en:Map}
+  const flush = () => {
+    if (!g) return;
+    const verse = isVerse(g.pali.filter(Boolean));
+    const join = arr => stitch(arr, verse);
+    const rows = [];
+    if (view !== "english" && g.pali.some(Boolean))
+      rows.push(`<p class="pali">${join(g.pali)}</p>`);
+    if (view !== "pali")
+      for (const s of streams){
+        const lines = g.en.get(s.key) || [];
+        if (!lines.some(Boolean)) continue;
+        rows.push(`<p class="eng"><span class="who">${esc(s.label)}</span>${join(lines)}</p>`);
+      }
+    if (rows.length)
+      parts.push(`<div class="seg${verse ? " v" : ""}">`
+        + `<span class="sn">${esc(tailOf(g.sid))}</span>${rows.join("")}</div>`);
+    g = null;
+  };
+  for (const seg of doc.segs.slice(skip)){
+    const [sid, pali, td] = seg;
+    if (isHeadSeg(sid) || isTitleSeg(sid)){
+      flush();
+      const p = (pali || "").trim(), e = pick(td, streams.flatMap(s => s.ids));
+      const top = view === "english" ? (e || p) : p || e;
+      const sub = view === "both" && p && e && e !== p ? e : "";
+      if (top) parts.push(`<h2>${rich(top)}${sub ? `<span class="en">${rich(sub)}</span>` : ""}</h2>`);
+      continue;
+    }
+    const key = groupOf(sid);
+    if (!g || g.key !== key){ flush(); g = {key, sid, pali: [], en: new Map()}; }
+    g.pali.push((pali || "").trim());
+    for (const s of streams){
+      if (!g.en.has(s.key)) g.en.set(s.key, []);
+      g.en.get(s.key).push(pick(td, s.ids));
+    }
+  }
+  flush();
+  const one = streams.length < 2 ? " only-one" : "";
+  return `<div class="work${one}" id="w-${escA(doc.uid)}">${head}`
+    + `<div class="body">${parts.join("")}</div></div>`;
+}
+
+// a bundle of texts gets a contents page; a single text doesn't need one
+function contents(){
+  if (docs.length < 2) return "";
+  const rows = docs.map(d => {
+    const {tPali, tEng} = titleParts(d);
+    return `<a class="toc-row" href="#w-${escA(d.uid)}">`
+      + `<span class="toc-t">${rich(tPali)}`
+      + (tEng && tEng !== tPali ? `<i> — ${rich(tEng)}</i>` : "") + `</span>`
+      + `<span class="toc-u">${esc(d.uid)}</span></a>`;
+  }).join("");
+  return `<div class="work toc"><p class="crumb">buddhomics</p>`
+    + `<h1>Contents<span class="en">${docs.length} texts</span></h1>`
+    + `<div class="toc-list">${rows}</div></div>`;
+}
+
+function colophon(){
+  const today = new Date().toISOString().slice(0, 10);
+  const ids = new Set();
+  for (const d of docs) for (const t of d.translators) if (active.has(t.id)) ids.add(t.id);
+  const machine = [...ids].filter(id => docs.some(d =>
+    d.translators.some(t => t.id === id && t.kind === "machine")));
+  // print.html?uid=… is the stable address of this exact export; a long bundle
+  // makes for an unreadable URL, so those just cite the site
+  const link = docs.length === 1
+    ? `buddhomics.cherch.org/print.html?uid=${encodeURIComponent(docs[0].uid)}`
+    : "buddhomics.cherch.org";
+  return `<div class="colophon">`
+    + `<b>Source.</b> Pali root text and human translations from `
+    + `<a href="https://suttacentral.net">SuttaCentral</a> / bilara-data, dedicated to the `
+    + `public domain under CC0.`
+    + (machine.length ? ` Machine translations (${machine.map(id => esc(NAMES[id] || id)).join(", ")}) `
+        + `produced for buddhomics and likewise offered as CC0.` : "")
+    + ` Free to copy, print, and give away.<br>`
+    + `<b>Retrieved.</b> ${today} from <a href="https://${link}">${link}</a>`
+    + ` &middot; ${docs.length} text${docs.length === 1 ? "" : "s"}`
+    + ` &middot; typeset by buddhomics.</div>`;
+}
+
+function render(){
+  const sheet = document.getElementById("sheet");
+  sheet.innerHTML = contents() + docs.map(renderDoc).join("") + colophon();
+  document.title = docs.length === 1
+    ? `${docs[0].uid} — buddhomics` : `${docs.length} texts — buddhomics`;
+  buildSwitcher();
+  for (const b of document.querySelectorAll("#views button"))
+    b.setAttribute("aria-pressed", b.dataset.view === view);
+}
+
+function buildSwitcher(){
+  const seen = new Map();
+  for (const d of docs) for (const t of d.translators) if (!seen.has(t.id)) seen.set(t.id, t);
+  document.getElementById("trs").innerHTML = [...seen.values()].map(t =>
+    `<button data-sel="${escA(t.id)}" aria-pressed="${active.has(t.id)}">`
+    + `${esc(NAMES[t.id] || t.name)}</button>`).join("");
+}
+
+document.getElementById("views").addEventListener("click", e => {
+  const b = e.target.closest("button[data-view]");
+  if (!b) return;
+  view = b.dataset.view; syncUrl(); render();
+});
+document.getElementById("trs").addEventListener("click", e => {
+  const b = e.target.closest("button[data-sel]");
+  if (!b) return;
+  const id = b.dataset.sel;
+  if (active.has(id)){ if (active.size > 1) active.delete(id); } else active.add(id);
+  syncUrl(); render();
+});
+document.getElementById("nums").addEventListener("change", e => {
+  nums = e.target.checked;
+  document.body.classList.toggle("nums", nums);
+  syncUrl();
+});
+document.getElementById("doit").addEventListener("click", () => window.print());
+function syncUrl(){
+  const q = new URLSearchParams({uid: UIDS.join(","), view, tr: [...active].join(",")});
+  if (nums) q.set("nums", "1");
+  history.replaceState(null, "", "?" + q);
+}
+
+(async function main(){
+  const sheet = document.getElementById("sheet");
+  document.getElementById("nums").checked = nums;
+  document.body.classList.toggle("nums", nums);
+  if (!UIDS.length){
+    sheet.innerHTML = `<p class="note">Nothing to print. Open a text on the `
+      + `<a href="./">map</a> and use its <b>PDF</b> link.</p>`;
+    return;
+  }
+  const wanted = UIDS.slice(0, MAX_UIDS), dropped = UIDS.length - wanted.length;
+  const loaded = [];
+  for (const uid of wanted){
+    try {
+      const r = await fetch("texts/" + encodeURIComponent(uid) + ".json", {cache: "no-cache"});
+      if (r.ok) loaded.push(await r.json());
+    } catch (e){ /* skip a text that won't load rather than lose the whole batch */ }
+  }
+  // commentary text is served obfuscated pending licensing — it is readable on
+  // the site but not ours to hand out as a file
+  const comm = loaded.filter(d => d.obf).map(d => d.uid);
+  docs = loaded.filter(d => !d.obf);
+  if (!docs.length){
+    sheet.innerHTML = comm.length
+      ? `<p class="note"><b>Not available for print.</b> Commentaries (aṭṭhakathā, ṭīkā)
+         can be read on the map but can’t be exported — their text and translation
+         are under unresolved licensing, so they aren’t ours to give away.
+         <a href="./">Back to the map</a>.</p>`
+      : `<p class="note">Couldn’t load ${esc(UIDS.join(", "))}. <a href="./">Back to the map</a>.</p>`;
+    return;
+  }
+  if (!active.size) active = defaultActive(docs[0]);
+  // a translator asked for by URL may not exist in every text; keep only real ones
+  const have = new Set(docs.flatMap(d => d.translators.map(t => t.id)));
+  active = new Set([...active].filter(id => have.has(id)));
+  if (!active.size) for (const d of docs) for (const id of defaultActive(d)) active.add(id);
+  render();
+  if (comm.length || dropped){
+    const msg = [comm.length ? `${comm.length} commentary section${comm.length === 1 ? "" : "s"} omitted (licensing)` : "",
+      dropped ? `${dropped} text${dropped === 1 ? "" : "s"} beyond the ${MAX_UIDS}-text limit omitted` : ""]
+      .filter(Boolean).join(" · ");
+    document.getElementById("bar").insertAdjacentHTML("beforeend",
+      `<span class="hint">${esc(msg)}</span>`);
+  }
+})();
+</script>
+</body>
+</html>

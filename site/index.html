@@ -224,6 +224,10 @@ footer a{color:var(--accent)}
       <div id="rhead">
         <span class="ruid">reader</span><span class="rmeta">click a text to read it here</span>
         <a class="rsc" target="_blank" rel="noopener" hidden>SuttaCentral ↗</a>
+        <a class="rpdf" target="_blank" rel="noopener" hidden
+           title="printable page — print or save as PDF">PDF ↗</a>
+        <a class="rpdfg" target="_blank" rel="noopener" hidden
+           title="printable page for this whole group"></a>
         <span class="toggle rview" role="group" aria-label="display">
           <button data-view="pali">Pali</button>
           <button data-view="both" aria-pressed="true">Both</button>
@@ -1192,6 +1196,7 @@ function renderNavList(){
       + `<span>${esc(nodeName(it))}</span>`
       + `<span class="navcount">${n}${leaf ? " texts" : " ›"}</span></div>`;
   }).join("") + "</div>";
+  updatePdfLink();
   const cur = rbody.querySelector(".navitem.cur");
   if (cur) cur.scrollIntoView({block: "nearest"});
 }
@@ -1237,6 +1242,47 @@ function buildSwitcher(){
   ).join("");
 }
 
+const COMMENTARY_BASKETS = new Set(["aṭṭhakathā", "ṭīkā", "anya"]);
+const PDF_MAX = 60;                     // must match MAX_UIDS in print.html
+function docsUnder(key, out = []){      // every text at or below a tree node
+  for (const d of groupDocs.get(key) || []) out.push(d);
+  for (const c of groupChildren.get(key) || []){
+    if (out.length > PDF_MAX) return out;
+    docsUnder(c, out);
+  }
+  return out;
+}
+// print.html renders the open text (or a whole leaf group) as a typeset page the
+// reader can print or save as PDF. Commentary is excluded: it is served obfuscated
+// pending licensing, so it stays readable here but is not handed out as a file.
+function updatePdfLink(){
+  const a = rhead.querySelector(".rpdf"), ag = rhead.querySelector(".rpdfg");
+  // the group link: every text at or below a tree node, as one document. Big
+  // nodes are left alone rather than silently cut off at the limit.
+  const setGroup = (key, label) => {
+    const g = key ? docsUnder(key) : [];
+    if (g.length < 2 || g.length > PDF_MAX || g.some(p => COMMENTARY_BASKETS.has(p.basket))){
+      ag.hidden = true; return;
+    }
+    ag.href = "print.html?uid=" + encodeURIComponent(g.map(p => p.uid).join(","))
+      + "&view=" + readerView;
+    ag.textContent = `${label} · ${g.length} ↗`;
+    ag.hidden = false;
+  };
+  if (navList){
+    a.hidden = true;
+    setGroup(navList.parent, "PDF");
+    return;
+  }
+  if (!readerPoint || !readerDoc || readerDoc.obf){ a.hidden = ag.hidden = true; return; }
+  const q = new URLSearchParams({uid: readerPoint.uid, view: readerView});
+  if (readerActive.size) q.set("tr", [...readerActive].join(","));
+  a.href = "print.html?" + q;
+  a.hidden = false;
+  const key = leafKey(readerPoint);
+  setGroup(key, "+ " + nodeName(key));
+}
+
 function renderReaderBody(){
   const doc = readerDoc, parts = [];
   // mark provenance whenever the doc has a choice of translators (even if one
@@ -1265,6 +1311,7 @@ function renderReaderBody(){
   rbody.innerHTML = parts.join("");
   rbody.scrollTop = 0;
   relitReader();
+  updatePdfLink();
 }
 
 async function openReader(p){
@@ -1276,6 +1323,7 @@ async function openReader(p){
   readerPoint = p; navList = null;   // opening a text drops out of list mode
   document.getElementById("rnav-top").innerHTML = navButtons();
   rhead.querySelector(".rtrans").innerHTML = "";
+  rhead.querySelector(".rpdf").hidden = true;   // until we know the doc is printable
   rbody.innerHTML = '<p class="note">loading…</p>';
   try {
     let doc = textCache.get(p.uid);
@@ -1299,7 +1347,7 @@ async function openReader(p){
           ? (pali && pali.trim() ? `<h3>${esc(pali.trim())}</h3>` : "")
           : `<div class="seg">${pali && pali.trim() ? `<p class="p">${paliSpans(pali.trim())}</p>` : ""}</div>`).join("")
         + `<div class="rnav bot">${navButtons()}</div>`;
-      rbody.scrollTop = 0; relitReader(); return;
+      rbody.scrollTop = 0; relitReader(); updatePdfLink(); return;
     }
     buildSwitcher();
     renderReaderBody();

@@ -13,6 +13,10 @@ release is a single four-panel instrument over the whole canon:
 - **Reader + dictionary** — Pali/English by segment with a per-translator multi-select
   (human circles, machine squares), layered NCPED/DPD/DPPN word lookup, and accent-insensitive
   lemma search.
+- **Print view** (`site/print.html`) — any text, or a small group, re-typeset as a page the
+  browser can save as a PDF: segments stitched back into paragraphs, verse detected and kept
+  lineated, a contents page for bundles, and a CC0 colophon. Commentary is excluded (see
+  [License](#license)).
 
 Both maps share one SVD of a Pali TF-IDF matrix and are linked by a term–document incidence
 bitmatrix; the full canon now has English (see [Translation](#translation)).
